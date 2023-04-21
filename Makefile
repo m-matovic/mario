@@ -1,7 +1,7 @@
-CC=gcc
+CXX=g++
 
-mario: main.c
-	${CC} -o mario main.c
+mario: main.cpp
+	${CXX} -o mario main.cpp
 
 clean:
 	rm mario
