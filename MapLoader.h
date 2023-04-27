@@ -2,6 +2,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <deque>
+#include <stdexcept>
 
 using namespace std;
 
@@ -10,6 +11,7 @@ using namespace std;
 #define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
+#define CHUNK_LEN 64
 
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,
@@ -21,7 +23,7 @@ enum Blocks {
 
 enum Background {
     AIR_BG, BRICK_BG, BRICK_HALF_LEFT, BRICK_HALF_RIGHT, BRICK_ARCH, BRICK_HOLE, BRICK_BATTLEMENT_HOLE, BRICK_BATTLEMENT_FILLED,
-    CLOUD_TOP_LEFT, CLOUD_TOP, CLOUD_TOP_RIGHT, CLOUD_BOTTOM_LEFT, CLOUD_BOTTOM, CLOUD_BOTTOM_RIGHT, HILL_INCLINE, HILLE,
+    CLOUD_TOP_LEFT, CLOUD_TOP, CLOUD_TOP_RIGHT, CLOUD_BOTTOM_LEFT, CLOUD_BOTTOM, CLOUD_BOTTOM_RIGHT, HILL_INCLINE, HILL,
     HILL_DECLINE, HILL_TOP, HILL_SPOT, BRIDGE_HANDRAIL, TREE_SMALL, TREE_TALL_BOTTOM, TREE_TALL_TOP, TREE_TRUNK_BG, FENCE
 };
 
@@ -40,7 +42,8 @@ enum BlockContent {
 };
 
 typedef struct {
-    unsigned char *map;
+    unsigned char **map;
+    unsigned char **background;
     unsigned short length;
     unsigned char height;
 } Map;
@@ -53,27 +56,73 @@ typedef struct {
     unsigned short content : 3;
 } Block;
 
-Map* loadMap(const char *location, bool background){
+unsigned char getMapBlock(Map *map, int x, int y){
+    if(x >= map->length || x < 0) return 255;
+    if(y >= map->height || y < 0) return 255;
+
+    return map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
+}
+
+bool setMapBlock(Map *map, int x, int y, unsigned char block){
+    if(x >= map->length || x < 0) return false;
+    if(y >= map->height || y < 0) return false;
+
+    map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
+    return false;
+}
+
+unsigned char getBackgroundBlock(Map *map, int x, int y){
+    if(x >= map->length || x < 0) return 255;
+    if(y >= map->height || y < 0) return 255;
+
+    return map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
+}
+
+bool setBackgroundBlock(Map *map, int x, int y, unsigned char block){
+    if(x >= map->length || x < 0) return false;
+    if(y >= map->height || y < 0) return false;
+
+    map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
+    return false;
+}
+
+Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
     FILE* mapFile = fopen(location, "rb");
     unsigned short numBuffer = 0; // Stores information on the y position and the type of block
     char temp = 0; // Used to load map length and possibly width
 
-    Map *map = static_cast<Map *> (malloc(sizeof(Map)));
-    fread(&temp, 1, 1, mapFile);
-    numBuffer |= ((unsigned short) temp) << 8;
-    fread(&temp, 1, 1, mapFile);
-    numBuffer |= temp;
-    map->length = numBuffer << 1 >> 1;
-    if(map->length > MAX_LENGTH) throw length_error("Maximal map length exceeded!");
-
-    if(numBuffer >> 15 > 0){
-        numBuffer = 0;
+    Map *map;
+    if(loadedMap == nullptr && !background) map = static_cast<Map *> (malloc(sizeof(Map)));
+    else if(loadedMap == nullptr && background) throw invalid_argument("Background cannot be loaded before the main map.");
+    else map = loadedMap;
+    if(!background) {
         fread(&temp, 1, 1, mapFile);
-        map->height = temp;
-        if(map->height > MAX_HEIGHT) throw length_error("Maximal map height exceeded!");
+        numBuffer |= ((unsigned short) temp) << 8;
+        fread(&temp, 1, 1, mapFile);
+        numBuffer |= temp;
+        map->length = numBuffer << 1 >> 1;
+        if (map->length > MAX_LENGTH) throw length_error("Maximal map length exceeded!");
+
+        if(numBuffer >> 15 > 0){
+            numBuffer = 0;
+            fread(&temp, 1, 1, mapFile);
+            map->height = temp;
+            if(map->height > MAX_HEIGHT) throw length_error("Maximal map height exceeded!");
+        }
+        else map->height = MAP_HEIGHT;
+        map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN)));
+        for(int i = 0; i < map->length / CHUNK_LEN; i++)
+            map->map[i] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
+        if (map->length % CHUNK_LEN > 0)
+            map->map[map->length/CHUNK_LEN] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * (map->length%CHUNK_LEN)));
     }
-    else map->height = MAP_HEIGHT;
-    map->map = static_cast<unsigned char *> (malloc(sizeof(unsigned char) * map->height * map->length));
+    else {
+        map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN)));
+        for(int i = 0; i < map->length / CHUNK_LEN; i++)
+            map->background[i] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
+        if (map->length % CHUNK_LEN > 0)
+            map->background[map->length/CHUNK_LEN] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * (map->length%CHUNK_LEN)));
+    }
 
     unsigned char heightPattern = 0; // Pattern for extracting bits related to the y position of a block from the 8-bit buffer
     char bits = 0; // Number of bits needed to encode the height
@@ -129,8 +178,10 @@ Map* loadMap(const char *location, bool background){
                 if(fread(&inBuffer, 1, 1, mapFile) != 1) index = 9;
                 if(remainder == 0) {
                     if(selector == 0 && numBuffer >> (8+bits) == map->height){
-                        for(char i = y; i < map->height; i++) map->map[x*map->height+i] = 0;
+                        if(background) for(char i = y; i < map->height; i++) setBackgroundBlock(map, x, i, AIR_BG);
+                        else for(char i = y; i < map->height; i++) setMapBlock(map, x, i, AIR);
                         x++;
+                        if(x == map->length) index = 9;
                         y = 0;
                         numBuffer = 0;
                     }
@@ -141,8 +192,10 @@ Map* loadMap(const char *location, bool background){
             else {
                 remainder = 0;
                 if(selector == 0 && numBuffer >> (8+bits) == map->height){
-                    for(char i = y; i < map->height; i++) map->map[x*map->height+i] = 0;
+                    if(background) for(char i = y; i < map->height; i++) setBackgroundBlock(map, x, i, AIR_BG);
+                    else for(char i = y; i < map->height; i++) setMapBlock(map, x, i, AIR);
                     x++;
+                    if(x == map->length) index = 9;
                     y = 0;
                     numBuffer = 0;
                 }
@@ -151,17 +204,24 @@ Map* loadMap(const char *location, bool background){
         }
 
         if(selector == 2) {
-            if(numBuffer == 0) break;
             char yPos = (numBuffer & heightPattern << 8) >> (8+bits);
             unsigned char block = (numBuffer & blockPattern << bits) >> (bits + 8 - (background ? BACKGROUND_BITS : BLOCK_BITS));
 
             if(yPos < y) {
-                for(char i = y; i < map->height; i++) map->map[x*map->height+i] = 0;
+                if(background) for(char i = y; i < map->height; i++) setBackgroundBlock(map, x, i, AIR_BG);
+                else for(char i = y; i < map->height; i++) setMapBlock(map, x, i, AIR);
                 x++;
+                if(x == map->length) index = 9;
                 y = 0;
             }
-            for(; y < yPos; y++) map->map[x*map->height+y] = 0;
-            map->map[x*map->height+y] = block;
+            if(background) {
+                for (; y < yPos; y++) setBackgroundBlock(map, x, y, AIR_BG);
+                setBackgroundBlock(map, x, y, block);
+            }
+            else {
+                for (; y < yPos; y++) setMapBlock(map, x, y, AIR);
+                setMapBlock(map, x, y, block);
+            }
             y++;
 
             selector = 0;
@@ -170,7 +230,8 @@ Map* loadMap(const char *location, bool background){
     }
 
     while(x < map->length){
-        for(char i = y; i < map->height; i++) map->map[x*map->height+i] = 0;
+        if(background) for(char i = y; i < map->height; i++)setBackgroundBlock(map, x, i, AIR_BG);
+        else for(char i = y; i < map->height; i++) setMapBlock(map, x, i, AIR);
         x++;
         y = 0;
     }
@@ -184,19 +245,21 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
     FILE *mapFile = fopen(location, "wb");
     unsigned char outBuffer = 0;
 
-    if(map->height != MAP_HEIGHT) outBuffer |= 0x80u;
-    outBuffer |= (map->length & 0x7f00u) >> 8;
-    fwrite(&outBuffer, 1, 1, mapFile);
-    outBuffer = 0;
-
-    outBuffer |= map->length & 0xffu;
-    fwrite(&outBuffer, 1, 1, mapFile);
-    outBuffer = 0;
-
-    if(map->height != MAP_HEIGHT) {
-        outBuffer |= map->height & 0xffu;
+    if(!background) {
+        if (map->height != MAP_HEIGHT) outBuffer |= 0x80u;
+        outBuffer |= (map->length & 0x7f00u) >> 8;
         fwrite(&outBuffer, 1, 1, mapFile);
         outBuffer = 0;
+
+        outBuffer |= map->length & 0xffu;
+        fwrite(&outBuffer, 1, 1, mapFile);
+        outBuffer = 0;
+
+        if (map->height != MAP_HEIGHT) {
+            outBuffer |= map->height & 0xffu;
+            fwrite(&outBuffer, 1, 1, mapFile);
+            outBuffer = 0;
+        }
     }
 
     unsigned char heightPattern = 0; // Pattern for extracting bits related to the y position of a block from the 8-bit buffer
@@ -222,7 +285,7 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
     char remainder = 0; // Number of bits remaining to be stored for the heightPattern/blockPattern to be complete
 
     while(x < map->length){
-        if(map->map[x * map->height + y] != AIR) {
+        if( (getMapBlock(map, x, y) != AIR && !background) || (getBackgroundBlock(map, x, y) != AIR_BG && background)) {
             prevX = x;
             if(prevY >= y){
                 outBuffer |= ((heightPattern >> (8-bits)) & map->height) << (8-bits) >> index;
@@ -249,7 +312,8 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
                 if(remainder != 0) outBuffer |= ((heightPattern >> (8-bits)) & y) << (8 - remainder);
             }
 
-            outBuffer |= ((blockPattern >> (8-blockBits)) & map->map[x * map->height + y]) << (8-blockBits) >> index;
+            if(background) outBuffer |= ((blockPattern >> (8-blockBits)) & getBackgroundBlock(map, x, y)) << (8-blockBits) >> index;
+            else outBuffer |= ((blockPattern >> (8-blockBits)) & getMapBlock(map, x, y)) << (8-blockBits) >> index;
             index += blockBits;
             if(index >= 8) {
                 remainder = index - 8;
@@ -257,7 +321,10 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
                 fwrite(&outBuffer, 1, 1, mapFile);
                 outBuffer = 0;
 
-                if(remainder != 0) outBuffer |= ((blockPattern >> (8-blockBits)) & map->map[x * map->height + y]) << (8 - remainder);
+                if(remainder != 0){
+                    if(background) outBuffer |= ((blockPattern >> (8-blockBits)) & getBackgroundBlock(map, x, y)) << (8 - remainder);
+                    else outBuffer |= ((blockPattern >> (8-blockBits)) & getMapBlock(map, x, y)) << (8 - remainder);
+                }
             }
         };
         y++;
@@ -282,4 +349,150 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
     fwrite(&outBuffer, 1, 1, mapFile);
 
     fclose(mapFile);
+}
+
+void mapMaker() {
+    setbuf(stdout, 0);
+    char *fileName = static_cast<char *>(malloc(20 * sizeof(char)));
+    printf("File name:\n");
+    scanf("%15s", fileName);
+    int length, height;
+    printf("Map length and height:\n");
+    scanf("%d %d", &length, &height);
+
+    Map *map = static_cast<Map *>(malloc(sizeof(Map)));
+    map->height = height;
+    map->length = length;
+    map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN)));
+    for (int i = 0; i < map->length / CHUNK_LEN; i++)
+        map->map[i] = static_cast<unsigned char *> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
+    if (map->length % CHUNK_LEN > 0)
+        map->map[map->length / CHUNK_LEN] = static_cast<unsigned char *> (malloc(
+                sizeof(unsigned char) * map->height * (map->length % CHUNK_LEN)));
+
+    map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN)));
+    for (int i = 0; i < map->length / CHUNK_LEN; i++)
+        map->background[i] = static_cast<unsigned char *> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
+    if (map->length % CHUNK_LEN > 0)
+        map->background[map->length / CHUNK_LEN] = static_cast<unsigned char *> (malloc(
+                sizeof(unsigned char) * map->height * (map->length % CHUNK_LEN)));
+
+    for (int x = 0; x < map->length; x++)
+        for (int y = 0; y < map->height; y++) {
+            setMapBlock(map, x, y, AIR);
+            setMapBlock(map, x, y, AIR_BG);
+        }
+
+    char printPallet[57];
+    {
+        printPallet[AIR] = ' ';
+        printPallet[BRICK] = '#';
+        printPallet[BRICK_GROUND] = '@';
+        printPallet[BRICK_STAIR] = '%';
+        printPallet[QUESTION_BLOCK_EMPTY] = '0';
+        printPallet[QUESTION_BLOCK] = '?';
+        printPallet[INVISIBLE_BLOCK] = '_';
+        printPallet[CANON_TOP] = '-';
+        printPallet[CANON_BASE] = '"';
+        printPallet[CANON_SUPPORT] = 'H';
+        printPallet[TREE_TRUNK] = '|';
+        printPallet[LEAVES] = '^';
+        printPallet[LEAVES_LEFT] = '/';
+        printPallet[LEAVES_RIGHT] = '\\';
+        printPallet[MUSHROOM_TRUNK] = '&';
+        printPallet[MUSHROOM_TOP] = '-';
+        printPallet[MUSHROOM_LEFT] = '/';
+        printPallet[MUSHROOM_RIGHT] = '\\';
+        printPallet[PIPE_LEFT] = 'L';
+        printPallet[PIPE_RIGHT] = 'I';
+        printPallet[PIPE_TOP_LEFT] = 'q';
+        printPallet[PIPE_TOP_RIGHT] = 'p';
+        printPallet[PIPE_SIDE_TOP_LEFT] = 'h';
+        printPallet[PIPE_SIDE_TOP_RIGHT] = 'T';
+        printPallet[PIPE_SIDE_LEFT] = '.';
+        printPallet[PIPE_SIDE_RIGHT] = '"';
+        printPallet[PIPE_MERGE_TOP] = 'q';
+        printPallet[PIPE_MERGE_BOTTOM] = 'd';
+        printPallet[BRIDGE] = '*';
+        printPallet[VINE_BLOCK] = '$';
+        printPallet[CLOUD] = 'X';
+        printPallet[PLATFORM] = '=';
+        printPallet[WATER] = '+';
+        printPallet[WATER_COIN] = 'C';
+        printPallet[WATER_TOP] = 'm';
+        printPallet[BRICK_WATER] = '#';
+        printPallet[CORAL] = 'v';
+    }
+    bool hideFG = false;
+
+    fflush(stdin);
+    while (true) {
+        printf("  ");
+        for (int x = 0; x < map->length; x++) printf("%3d", x % 100);
+        printf("\n");
+        for (int y = 0; y < map->height; y++) {
+            printf("%2d", y % 100);
+            for (int x = 0; x < map->length; x++)
+                if (getMapBlock(map, x, y) != AIR && !hideFG)
+                    printf("%c%c%c", printPallet[getMapBlock(map, x, y) ],
+                           printPallet[getMapBlock(map, x, y) ], printPallet[getMapBlock(map, x, y) ]);
+                else printf(" %c ", printPallet[getBackgroundBlock(map, x, y) ]);
+            printf("%2d", y % 100);
+            printf("\n");
+        }
+        printf("  ");
+        for (int x = 0; x < map->length; x++) printf("%3d", x % 100);
+        printf("\n");
+
+        char command;
+        scanf("%c", &command);
+
+        switch (command) {
+            case 'p': { // place
+                int x, y, block;
+                scanf("%d %d %d", &x, &y, &block);
+                setMapBlock(map, x, y, block);
+                break;
+            }
+            case 'b': { // background
+                int x, y, block;
+                scanf("%d %d %d", &x, &y, &block);
+                setBackgroundBlock(map, x, y, block);
+            }
+            case 'f': { // fill
+                char loc;
+                int x1, y1, x2, y2, block;
+                scanf(" %c %d %d %d %d %d", &loc, &x1, &y1, &x2, &y2, &block);
+                for (int x = min(x1, x2); x <= max(x1, x2); x++)
+                    for (int y = min(y1, y2); y <= max(y1, y2); y++)
+                        if (loc == 'p') setMapBlock(map, x, y, block);
+                        else if (loc == 'b') setBackgroundBlock(map, x, y, block);
+                break;
+            }
+            case 'h': // hide
+                hideFG = !hideFG;
+                break;
+            case 'e': { // end
+                char endIndex = 0;
+                for (endIndex; endIndex < 15; endIndex++) if (fileName[endIndex] == 0) break;
+                fileName[endIndex] = '.';
+                fileName[endIndex + 1] = 'm';
+                fileName[endIndex + 2] = 'a';
+                fileName[endIndex + 3] = 'p';
+                fileName[endIndex + 4] = 0;
+                saveMap(fileName, false, map);
+
+                fileName[endIndex + 1] = 'b';
+                fileName[endIndex + 2] = 'g';
+                fileName[endIndex + 3] = 0;
+                saveMap(fileName, true, map);
+
+                free(map->map);
+                free(map->background);
+                free(fileName);
+                return;
+            }
+        }
+        fflush(stdin);
+    }
 }
