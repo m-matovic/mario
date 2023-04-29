@@ -11,14 +11,16 @@ using namespace std;
 #define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
-#define CHUNK_LEN 64
+#define CHUNK_LEN 32
 
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,
     CANON_SUPPORT, TREE_TRUNK, LEAVES, LEAVES_LEFT, LEAVES_RIGHT, MUSHROOM_TRUNK, MUSHROOM_TOP, MUSHROOM_LEFT, MUSHROOM_RIGHT,
     PIPE_LEFT, PIPE_RIGHT, PIPE_TOP_LEFT, PIPE_TOP_RIGHT, PIPE_SIDE_TOP_LEFT, PIPE_SIDE_TOP_RIGHT, PIPE_SIDE_LEFT,
-    PIPE_SIDE_RIGHT, PIPE_MERGE_TOP, PIPE_MERGE_BOTTOM, BRIDGE, VINE_BLOCK, CLOUD, PLATFORM, WATER, WATER_COIN,
-    WATER_TOP, BRICK_WATER, CORAL
+    PIPE_SIDE_RIGHT, PIPE_MERGE_TOP, PIPE_MERGE_BOTTOM, BRIDGE, VINE_BLOCK, CLOUD, WATER, WATER_COIN,
+    WATER_TOP, BRICK_WATER, CORAL, COIN_BLOCK, FLAG_POLE, FLAG_TOP, BOWSER_BRIDGE, AXE, PIRANHA_PLANT_BLOCK, BLOOBER_BLOCK,
+    BUZZY_BEETLE_BLOCK, CHEEP_CHEEP_BLOCK, FIRE_BAR_BLOCK, HAMMER_BROTHER_BLOCK, KOOPA_PARATROOPA_BLOCK, KOOPA_TROOPA_BLOCK,
+    LAKITU_BLOCK, GOOMBA_BLOCK, SPINY_BLOCK, PLATFORM_BLOCK
 };
 
 enum Background {
@@ -28,13 +30,13 @@ enum Background {
 };
 
 enum FilledBlocks {
-    BRICK_COIN = 0x25, BRICK_MUSHROOM, BRICK_ONE_UP, BRICK_STAR, BRICK_VINE, QUESTION_BLOCK_MUSHROOM, QUESTION_BLOCK_ONE_UP,
+    BRICK_COIN = 53, BRICK_MUSHROOM, BRICK_ONE_UP, BRICK_STAR, BRICK_VINE, QUESTION_BLOCK_MUSHROOM, QUESTION_BLOCK_ONE_UP,
     QUESTION_BLOCK_STAR, INVISIBLE_BLOCK_MUSHROOM, INVISIBLE_BLOCK_ONE_UP, INVISIBLE_BLOCK_STAR
 };
 
 enum Entities {
-    PIRANHA_PLANT = 0x30, BLOOBER, BUZZY_BEETLE, CHEEP_CHEEP, FIRE_BAR, HAMMER_BROTHER, KOOPA_PARATROOPA,
-    KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, MUSHROOM_ENTITY, ONE_UP_ENTITY, STAR_ENTITY
+    PIRANHA_PLANT, BLOOBER, BUZZY_BEETLE, CHEEP_CHEEP, FIRE_BAR, HAMMER_BROTHER, KOOPA_PARATROOPA,
+    KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, PLATFORM
 };
 
 enum BlockContent {
@@ -352,7 +354,7 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
 }
 
 void mapMaker() {
-    setbuf(stdout, 0);
+    //setbuf(stdout, 0);
     char *fileName = static_cast<char *>(malloc(20 * sizeof(char)));
     printf("File name:\n");
     scanf("%15s", fileName);
@@ -363,14 +365,14 @@ void mapMaker() {
     Map *map = static_cast<Map *>(malloc(sizeof(Map)));
     map->height = height;
     map->length = length;
-    map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN)));
+    map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
     for (int i = 0; i < map->length / CHUNK_LEN; i++)
         map->map[i] = static_cast<unsigned char *> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
     if (map->length % CHUNK_LEN > 0)
         map->map[map->length / CHUNK_LEN] = static_cast<unsigned char *> (malloc(
                 sizeof(unsigned char) * map->height * (map->length % CHUNK_LEN)));
 
-    map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN)));
+    map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
     for (int i = 0; i < map->length / CHUNK_LEN; i++)
         map->background[i] = static_cast<unsigned char *> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
     if (map->length % CHUNK_LEN > 0)
@@ -380,10 +382,10 @@ void mapMaker() {
     for (int x = 0; x < map->length; x++)
         for (int y = 0; y < map->height; y++) {
             setMapBlock(map, x, y, AIR);
-            setMapBlock(map, x, y, AIR_BG);
+            setBackgroundBlock(map, x, y, AIR_BG);
         }
 
-    char printPallet[57];
+    char printPallet[64];
     {
         printPallet[AIR] = ' ';
         printPallet[BRICK] = '#';
@@ -416,32 +418,62 @@ void mapMaker() {
         printPallet[BRIDGE] = '*';
         printPallet[VINE_BLOCK] = '$';
         printPallet[CLOUD] = 'X';
-        printPallet[PLATFORM] = '=';
+        printPallet[PLATFORM_BLOCK] = '=';
         printPallet[WATER] = '+';
         printPallet[WATER_COIN] = 'C';
         printPallet[WATER_TOP] = 'm';
         printPallet[BRICK_WATER] = '#';
         printPallet[CORAL] = 'v';
+        printPallet[BRICK_COIN] = '#';
+        printPallet[BRICK_MUSHROOM] = '#';
+        printPallet[BRICK_ONE_UP] = '#';
+        printPallet[BRICK_STAR] = '#';
+        printPallet[BRICK_VINE] = '#';
+        printPallet[QUESTION_BLOCK_MUSHROOM] = '?';
+        printPallet[QUESTION_BLOCK_ONE_UP] = '?';
+        printPallet[QUESTION_BLOCK_STAR] = '?';
+        printPallet[INVISIBLE_BLOCK_MUSHROOM] = '_';
+        printPallet[INVISIBLE_BLOCK_STAR] = '_';
+        printPallet[INVISIBLE_BLOCK_ONE_UP] = '_';
+        printPallet[PIRANHA_PLANT_BLOCK] = '<';
+        printPallet[BLOOBER_BLOCK] = 'g';
+        printPallet[BUZZY_BEETLE_BLOCK] = 'B';
+        printPallet[CHEEP_CHEEP_BLOCK] = 'f';
+        printPallet[FIRE_BAR_BLOCK] = ':';
+        printPallet[HAMMER_BROTHER_BLOCK] = 'T';
+        printPallet[KOOPA_PARATROOPA_BLOCK] = 'K';
+        printPallet[KOOPA_TROOPA_BLOCK] = 'k';
+        printPallet[LAKITU_BLOCK] = 'L';
+        printPallet[GOOMBA_BLOCK] = 'o';
+        printPallet[SPINY_BLOCK] = 'M';
+        printPallet[COIN_BLOCK] = 'O';
+        printPallet[FLAG_POLE] = '|';
+        printPallet[FLAG_TOP] = 'o';
+        printPallet[BOWSER_BRIDGE] = '=';
+        printPallet[AXE] = 'P';
     }
     bool hideFG = false;
+    char chunk = 0;
 
     fflush(stdin);
     while (true) {
+        system("cls");
         printf("  ");
-        for (int x = 0; x < map->length; x++) printf("%3d", x % 100);
+        for (int x = chunk * CHUNK_LEN; x < (chunk+1) * CHUNK_LEN && x < map->length; x++) printf("%3d", x % 100);
         printf("\n");
         for (int y = 0; y < map->height; y++) {
             printf("%2d", y % 100);
-            for (int x = 0; x < map->length; x++)
-                if (getMapBlock(map, x, y) != AIR && !hideFG)
+            for (int x = chunk * CHUNK_LEN; x < (chunk+1) * CHUNK_LEN && x < map->length; x++)
+                if (getMapBlock(map, x, y) != AIR && !hideFG && getMapBlock(map, x, y) != 255)
                     printf("%c%c%c", printPallet[getMapBlock(map, x, y) ],
                            printPallet[getMapBlock(map, x, y) ], printPallet[getMapBlock(map, x, y) ]);
+                else if(getMapBlock(map, x, y == 255)) printf("?");
                 else printf(" %c ", printPallet[getBackgroundBlock(map, x, y) ]);
             printf("%2d", y % 100);
             printf("\n");
         }
         printf("  ");
-        for (int x = 0; x < map->length; x++) printf("%3d", x % 100);
+        for (int x = chunk * CHUNK_LEN; x < (chunk+1) * CHUNK_LEN && x < map->length; x++) printf("%3d", x % 100);
         printf("\n");
 
         char command;
@@ -471,6 +503,12 @@ void mapMaker() {
             }
             case 'h': // hide
                 hideFG = !hideFG;
+                break;
+            case 'l':
+                if(chunk > 0) chunk--;
+                break;
+            case 'r':
+                if(chunk < map->length / CHUNK_LEN) chunk++;
                 break;
             case 'e': { // end
                 char endIndex = 0;
