@@ -2,6 +2,6 @@ cmake_minimum_required(VERSION 3.24)
 project(Mario)
 
 set(CMAKE_CXX_STANDARD 17)
-set(HEADERS MapLoader.h)
+set(HEADERS MapLoader.h EntityHandler.h)
 
 add_executable(Mario main.cpp ${HEADERS})

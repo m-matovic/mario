@@ -1,8 +1,10 @@
-#include <deque>
+#ifndef MAP_LOADER_H
+#define MAP_LOADER_H
+
 #include <cstdio>
 #include <cstdlib>
-#include <deque>
 #include <stdexcept>
+#include "EntityHandler.h"
 
 using namespace std;
 
@@ -12,6 +14,8 @@ using namespace std;
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
 #define CHUNK_LEN 32
+#define VIEWPORT_WIDTH 20
+#define VIEWPORT_HEIGHT 15
 
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,
@@ -51,21 +55,30 @@ typedef struct {
 } Map;
 
 typedef struct {
-    unsigned short x : 15;
-    unsigned short destructible : 1;
-    unsigned short y : 7;
-    unsigned short type : 6;
-    unsigned short content : 3;
+    unsigned char type;
+    unsigned char destructible : 1;
+    unsigned char content : 3;
 } Block;
 
-unsigned char getMapBlock(Map *map, int x, int y){
+typedef struct {
+    Block **viewport;
+    short x;
+    short y;
+    short front;
+    short yFront;
+    Map *map;
+} MapViewport;
+
+unsigned char getMapBlock(Map *map, int x, int y) // Get the block code from the map at coords. (x,y)
+{
     if(x >= map->length || x < 0) return 255;
     if(y >= map->height || y < 0) return 255;
 
     return map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
 }
 
-bool setMapBlock(Map *map, int x, int y, unsigned char block){
+bool setMapBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the map at coords. (x,y)
+{
     if(x >= map->length || x < 0) return false;
     if(y >= map->height || y < 0) return false;
 
@@ -73,14 +86,16 @@ bool setMapBlock(Map *map, int x, int y, unsigned char block){
     return false;
 }
 
-unsigned char getBackgroundBlock(Map *map, int x, int y){
+unsigned char getBackgroundBlock(Map *map, int x, int y) // Get the block code from the background at coords (x,y)
+{
     if(x >= map->length || x < 0) return 255;
     if(y >= map->height || y < 0) return 255;
 
     return map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
 }
 
-bool setBackgroundBlock(Map *map, int x, int y, unsigned char block){
+bool setBackgroundBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the background at coords. (x,y)
+{
     if(x >= map->length || x < 0) return false;
     if(y >= map->height || y < 0) return false;
 
@@ -88,10 +103,132 @@ bool setBackgroundBlock(Map *map, int x, int y, unsigned char block){
     return false;
 }
 
+Block getBlock(unsigned char blockCode) // Convert a block code to a block
+{
+    Block block;
+    block.type = blockCode;
+    block.content = EMPTY;
+    block.destructible = false;
+    switch (blockCode) {
+        case BRICK:
+            block.destructible = true;
+            break;
+        case BRICK_COIN:
+            block.content = COIN;
+            block.type = BRICK;
+            break;
+        case BRICK_MUSHROOM:
+            block.content = MUSHROOM;
+            block.type = BRICK;
+            break;
+        case BRICK_ONE_UP:
+            block.content = ONE_UP;
+            block.type = BRICK;
+            break;
+        case BRICK_STAR:
+            block.content = STAR;
+            block.type = BRICK;
+            break;
+        case BRICK_VINE:
+            block.content = VINE;
+            block.type = BRICK;
+            break;
+        case QUESTION_BLOCK:
+            block.content = COIN;
+            break;
+        case QUESTION_BLOCK_MUSHROOM:
+            block.type = QUESTION_BLOCK;
+            block.content = MUSHROOM;
+            break;
+        case QUESTION_BLOCK_STAR:
+            block.type = QUESTION_BLOCK;
+            block.content = STAR;
+            break;
+        case QUESTION_BLOCK_ONE_UP:
+            block.type = QUESTION_BLOCK;
+            block.content = ONE_UP;
+            break;
+        case INVISIBLE_BLOCK:
+            block.content = COIN;
+            break;
+        case INVISIBLE_BLOCK_STAR:
+            block.content = STAR;
+            block.type = INVISIBLE_BLOCK;
+            break;
+        case INVISIBLE_BLOCK_ONE_UP:
+            block.content = ONE_UP;
+            block.type = INVISIBLE_BLOCK;
+            break;
+        case INVISIBLE_BLOCK_MUSHROOM:
+            block.content = MUSHROOM;
+            block.type = INVISIBLE_BLOCK;
+    }
+    return block;
+}
+
+MapViewport* getViewport(Map *map) // Get a viewport of a map, which displays all the blocks within a predefined area and can be shifted in any direction.
+{
+    MapViewport* mapViewport = static_cast<MapViewport*>( malloc(sizeof(MapViewport)));
+    mapViewport->x = 0;
+    mapViewport->front = 0;
+    mapViewport->y = 0;
+    mapViewport->yFront = 0;
+    mapViewport->viewport = static_cast<Block**>(malloc(sizeof(Block*) * VIEWPORT_HEIGHT));
+    for(int i = 0; i < VIEWPORT_HEIGHT; i++)
+        mapViewport->viewport[i] = static_cast<Block*>(malloc(sizeof(Block) * VIEWPORT_WIDTH));
+
+    for(int x = 0; x < VIEWPORT_WIDTH; x++)
+        for(int y = 0; y < VIEWPORT_HEIGHT; y++)
+            mapViewport->viewport[y][x] = getBlock(getMapBlock(map, x, y));
+    mapViewport->map = map;
+
+    return mapViewport;
+}
+
+void shiftLeft(MapViewport* viewport) // Shift a viewport by one block to the left
+{
+    if(viewport->x <= 0) return;
+    viewport->x--;
+    viewport->front--;
+    if(viewport->front < 0) viewport->front = VIEWPORT_WIDTH-1;
+    for(int y = viewport->yFront; y < VIEWPORT_HEIGHT + viewport->yFront; y++)
+        viewport->viewport[y][viewport->front] = getBlock(getMapBlock(viewport->map, viewport->x, y));
+}
+
+void shiftRight(MapViewport* viewport) // Shift a viewport by one block to the right
+{
+    if(viewport->x >= viewport->map->length) return;
+    for(int y = viewport->yFront; y < VIEWPORT_HEIGHT + viewport->yFront; y++)
+        viewport->viewport[y][viewport->front] = getBlock(getMapBlock(viewport->map, viewport->x + VIEWPORT_WIDTH, y));
+    viewport->x++;
+    viewport->front++;
+    if(viewport->front >= VIEWPORT_WIDTH) viewport->front = 0;
+}
+
+void shiftDown(MapViewport* viewport) // Shift a viewport by one block downwards
+{
+    if(viewport->y <= 0) return;
+    viewport->y--;
+    viewport->yFront--;
+    if(viewport->yFront < 0) viewport->yFront = VIEWPORT_HEIGHT-1;
+    for(int x = viewport->front; x < VIEWPORT_WIDTH + viewport->front; x++)
+        viewport->viewport[viewport->yFront][x] = getBlock(getMapBlock(viewport->map, x, viewport->y));
+}
+
+void shiftUp(MapViewport* viewport) // Shift a viewport by one block upwards
+{
+    if(viewport->y <= 0) return;
+    for(int x = viewport->front; x < VIEWPORT_WIDTH + viewport->front; x++)
+        viewport->viewport[viewport->yFront][x] = getBlock(getMapBlock(viewport->map, x, viewport->y+VIEWPORT_HEIGHT));
+    viewport->y++;
+    viewport->yFront++;
+    if(viewport->yFront >= VIEWPORT_HEIGHT) viewport->yFront = 0;
+}
+
 Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
     FILE* mapFile = fopen(location, "rb");
     unsigned short numBuffer = 0; // Stores information on the y position and the type of block
-    char temp = 0; // Used to load map length and possibly width
+    unsigned char temp = 0; // Used to load map length and possibly width
 
     Map *map;
     if(loadedMap == nullptr && !background) map = static_cast<Map *> (malloc(sizeof(Map)));
@@ -104,12 +241,14 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
         numBuffer |= temp;
         map->length = numBuffer << 1 >> 1;
         if (map->length > MAX_LENGTH) throw length_error("Maximal map length exceeded!");
+        else if(map->length < VIEWPORT_WIDTH) throw length_error("Minimal map length not met!");
 
         if(numBuffer >> 15 > 0){
             numBuffer = 0;
             fread(&temp, 1, 1, mapFile);
             map->height = temp;
             if(map->height > MAX_HEIGHT) throw length_error("Maximal map height exceeded!");
+            else if(map->height < VIEWPORT_HEIGHT) throw length_error("Minimal map height not met!");
         }
         else map->height = MAP_HEIGHT;
         map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN)));
@@ -534,3 +673,17 @@ void mapMaker() {
         fflush(stdin);
     }
 }
+
+MapViewport* mapInit(string location){
+    int size = 0;
+    for(size = 0; size < 16; size++) if(location[size] == 0) break;
+    location += ".map";
+    Map *map = loadMap(location.c_str(), false);
+
+    location.replace(location.length()-3, 3, "bg");
+    loadMap(location.c_str(), true, map);
+    MapViewport *mapViewport = getViewport(map);
+    return mapViewport;
+}
+
+#endif
