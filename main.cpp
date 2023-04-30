@@ -1,9 +1,20 @@
 #include <iostream>
+
 #include "MapLoader.h"
+#include "ui.h"
 
-int main() {
+int main(void)
+{
+    glfwinit("test");
 
-    std::cout << "Hello World" << std::endl;
+    while(!shouldEnd())
+    {
+        frminit();
+        frmadd();
+        frmdraw();
+    }
+
+    glfwend();
 
     return 0;
 }
