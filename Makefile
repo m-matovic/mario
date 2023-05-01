@@ -1,8 +1,8 @@
 CC = gcc
 CXX = g++
 
-CFLAGS = -O2
-CXXFLAGS = -O2
+CFLAGS += -pipe
+CXXFLAGS += -pipe
 
 LIBS = -lGL -lm -lGLU -lGLEW -lglfw
 
