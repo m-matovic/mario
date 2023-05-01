@@ -63,11 +63,17 @@ void glfwinit(const char *wintag)
 
     context = nk_glfw3_init(&glfw, window, NK_GLFW3_INSTALL_CALLBACKS);
 
-    {
-        struct nk_font_atlas *atlas;
-        nk_glfw3_font_stash_begin(&glfw, &atlas);
-        nk_glfw3_font_stash_end(&glfw);
-    }
+    struct nk_font_atlas *atlas;
+    nk_glfw3_font_stash_begin(&glfw, &atlas);
+    struct nk_font *super_mario_font = nk_font_atlas_add_from_file(atlas, "super_mario_font.ttf", 32, NULL);
+    nk_glfw3_font_stash_end(&glfw);
+    nk_init_default(context, &super_mario_font->handle);
+
+    context->style.button.border_color = nk_rgba(0, 0, 0, 0);
+    context->style.button.text_background = nk_rgba(0, 0, 0, 0);
+    context->style.button.normal = nk_style_item_color(nk_rgba(0, 0, 0, 0));
+    context->style.button.hover = nk_style_item_color(nk_rgba(0, 0, 0, 0));
+    context->style.button.active = nk_style_item_color(nk_rgba(0, 0, 0, 0));
 }
 
 int shouldEnd(void)
@@ -79,22 +85,25 @@ void frminit(void)
 {
     glfwPollEvents();
     nk_glfw3_new_frame(&glfw);
-
 }
 
 void frmadd(void)
 {
     if (nk_begin(context, "test", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0))
     {
-        nk_layout_row_dynamic(context, 120, 1);
-        nk_label(context, "Hello world!", NK_TEXT_CENTERED);
-        
-        nk_layout_row_dynamic(context, 50, 1);
-        nk_label(context, "Hello world!", NK_TEXT_LEFT);
-        
-        nk_layout_row_static(context, 30, 80, 1);
-        if (nk_button_label(context, "AnyButton"))
-            fprintf(stdout, "button pressed\n");
+        nk_layout_row_dynamic(context, 200, 1);
+
+        nk_layout_row_dynamic(context, 80, 1);
+        if (nk_button_label(context, "Play"))
+            fprintf(stdout, "Play button pressed\n");
+
+        nk_layout_row_dynamic(context, 80, 1);
+        if (nk_button_label(context, "Continue"))
+            fprintf(stdout, "Continue button pressed\n");
+
+        nk_layout_row_dynamic(context, 80, 1);
+        if (nk_button_label(context, "Quit"))
+            exit(0);
     }
     nk_end(context);
 }
