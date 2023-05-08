@@ -13,7 +13,7 @@ using namespace std;
 #define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
-#define CHUNK_LEN 32
+#define CHUNK_LEN 32 // The map is split into chunks with dimensions map.height * CHUNK_LEN to avoid memory allocation problems
 #define VIEWPORT_WIDTH 20
 #define VIEWPORT_HEIGHT 15
 
@@ -40,7 +40,7 @@ enum FilledBlocks {
 
 enum Entities {
     PIRANHA_PLANT, BLOOBER, BUZZY_BEETLE, CHEEP_CHEEP, FIRE_BAR, HAMMER_BROTHER, KOOPA_PARATROOPA,
-    KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, PLATFORM
+    KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, PLATFORM, FIREFLOWER
 };
 
 enum BlockContent {
@@ -48,6 +48,7 @@ enum BlockContent {
 };
 
 typedef struct {
+    EntityNode *entityList;
     unsigned char **map;
     unsigned char **background;
     unsigned short length;
@@ -166,6 +167,26 @@ Block getBlock(unsigned char blockCode) // Convert a block code to a block
     return block;
 }
 
+EntityNode* getEntity(int entityCode, int x, int y, EntityNode *entityList = nullptr){
+    EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
+    if(entityList != nullptr) {
+        EntityNode *itr = entityList;
+        while(itr->next != nullptr) itr = itr->next;
+        itr->next = entity;
+    }
+
+    entity->type = entityCode - PIRANHA_PLANT_BLOCK;
+    entity->next = nullptr;
+    entity->x = x;
+    entity->y = y;
+    entity->velX = ENTITY_SPEED;
+    entity->velY = 0;
+    entity->accX = 0;
+    entity->accY = 0;
+    entity->entity = nullptr;
+    return entity;
+}
+
 MapViewport* getViewport(Map *map) // Get a viewport of a map, which displays all the blocks within a predefined area and can be shifted in any direction.
 {
     MapViewport* mapViewport = static_cast<MapViewport*>( malloc(sizeof(MapViewport)));
@@ -239,6 +260,7 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
         numBuffer |= ((unsigned short) temp) << 8;
         fread(&temp, 1, 1, mapFile);
         numBuffer |= temp;
+        map->entityList = nullptr;
         map->length = numBuffer << 1 >> 1;
         if (map->length > MAX_LENGTH) throw length_error("Maximal map length exceeded!");
         else if(map->length < VIEWPORT_WIDTH) throw length_error("Minimal map length not met!");
@@ -361,6 +383,13 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
             }
             else {
                 for (; y < yPos; y++) setMapBlock(map, x, y, AIR);
+                if(block >= PIRANHA_PLANT_BLOCK && block <= PLATFORM_BLOCK){
+                    if(map->entityList == nullptr) map->entityList = getEntity(block, x, y);
+                    else getEntity(block, x, y, map->entityList);
+                    if(block == PIRANHA_PLANT_BLOCK) block = PIPE_TOP_RIGHT;
+                    else if(block == CHEEP_CHEEP_BLOCK || block == BLOOBER_BLOCK) block = WATER;
+                    else block = AIR;
+                }
                 setMapBlock(map, x, y, block);
             }
             y++;
