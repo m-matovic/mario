@@ -38,11 +38,6 @@ enum FilledBlocks {
     QUESTION_BLOCK_STAR, INVISIBLE_BLOCK_MUSHROOM, INVISIBLE_BLOCK_ONE_UP, INVISIBLE_BLOCK_STAR
 };
 
-enum Entities {
-    PIRANHA_PLANT, BLOOBER, BUZZY_BEETLE, CHEEP_CHEEP, FIRE_BAR, HAMMER_BROTHER, KOOPA_PARATROOPA,
-    KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, PLATFORM, FIREFLOWER
-};
-
 enum BlockContent {
     EMPTY, COIN, MUSHROOM, ONE_UP, STAR, VINE
 };
@@ -179,6 +174,11 @@ EntityNode* getEntity(int entityCode, int x, int y, EntityNode *entityList = nul
     entity->next = nullptr;
     entity->x = x;
     entity->y = y;
+    entity->prevX = x;
+    entity->prevY = y;
+    entity->height = 1.0f;
+    entity->width = 1.0f;
+    entity->isFalling = false;
     entity->velX = ENTITY_SPEED;
     entity->velY = 0;
     entity->accX = 0;
