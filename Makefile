@@ -14,8 +14,8 @@ main: main.o ui.o
 main.o: main.cpp MapLoader.h ui.h
 	${CXX} -c main.cpp ${CXXFLAGS} ${LIBS}
 
-ui.o: ui.c ui.h
-	${CXX} -c ui.c ${CFLAGS} ${LIBS}
+ui.o: ui.cpp ui.h
+	${CXX} -c ui.cpp ${CFLAGS} ${LIBS}
 
 clean:
 	rm *.o
