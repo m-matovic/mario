@@ -4,7 +4,7 @@ CXX = g++
 CFLAGS += -pipe
 CXXFLAGS += -pipe
 
-LIBS = -lGL -lm -lGLU -lGLEW -lglfw
+LIBS = -lGL -lm -lGLEW -lglfw
 
 BIN = mario
 

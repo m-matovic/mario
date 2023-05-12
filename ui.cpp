@@ -87,23 +87,31 @@ void frminit(void)
     nk_glfw3_new_frame(&glfw);
 }
 
-void frmadd(void)
+int menu(void)
 {
-    if (nk_begin(context, "test", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0))
+    if(nk_begin(context, "test", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0))
     {
         nk_layout_row_dynamic(context, 200, 1);
 
         nk_layout_row_dynamic(context, 80, 1);
-        if (nk_button_label(context, "Play"))
-            fprintf(stdout, "Play button pressed\n");
+        if(nk_button_label(context, "Play"))
+            return 0;
 
         nk_layout_row_dynamic(context, 80, 1);
-        if (nk_button_label(context, "Continue"))
-            fprintf(stdout, "Continue button pressed\n");
-
-        nk_layout_row_dynamic(context, 80, 1);
-        if (nk_button_label(context, "Quit"))
+        if(nk_button_label(context, "Quit"))
             exit(0);
+    }
+    nk_end(context);
+
+    return 1;
+}
+
+void drawbg(struct nk_image bg)
+{
+    if(nk_begin(context, "test", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0))
+    {
+        nk_layout_row_static(context, WINDOW_HEIGHT, WINDOW_WIDTH, 1);
+        if(nk_button_image(context, bg));
     }
     nk_end(context);
 }

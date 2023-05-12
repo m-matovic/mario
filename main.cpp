@@ -7,10 +7,11 @@ int main(void)
 {
     glfwinit("test");
 
-    while(!shouldEnd())
+    int showmenu = 1;
+    while(!shouldEnd() && showmenu)
     {
         frminit();
-        frmadd();
+        showmenu = menu();
         frmdraw();
     }
 
