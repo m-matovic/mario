@@ -11,7 +11,7 @@ BIN = mario
 main: main.o ui.o
 	${CXX} -o ${BIN} main.o ui.o ${CXXFLAGS} ${LIBS}
 
-main.o: main.cpp MapLoader.h ui.h
+main.o: main.cpp MapEntityCommon.hpp MapLoader.hpp EntityHandler.hpp ui.h
 	${CXX} -c main.cpp ${CXXFLAGS} ${LIBS}
 
 ui.o: ui.cpp ui.h
