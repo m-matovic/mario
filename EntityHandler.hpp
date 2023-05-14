@@ -8,6 +8,49 @@
 #define TERMINAL_VELOCITY 10.0f
 #define GRAVITY_ACCELERATION 1.0f
 
+void setEntityDimensions(EntityNode *entity, int type){
+    switch(type){
+        case PLATFORM:
+            entity->width = 3.0f;
+            entity->height = 0.5f;
+        case HAMMER_BROTHER:
+            entity->width = 1.0f;
+            entity->height = 2.0f;
+        case FIRE_BAR:
+            entity->width = 0.5f;
+            entity->height = 3.0f;
+            break;
+        case PIRANHA_PLANT:
+        case BLOOBER:
+        case KOOPA_TROOPA:
+        case KOOPA_PARATROOPA:
+        case LAKITU:
+            entity->height = 1.5f;
+            entity->width = 1.0f;
+            break;
+        default:
+            entity->height = 1.0f;
+            entity->width = 1.0f;
+            break;
+    }
+}
+
+void setEntityStartingVelocity(EntityNode *entity, Map *map) {
+    entity->velX = ENTITY_SPEED;
+    entity->accX = 0;
+    entity->velY = 0;
+    if(getMapBlock(map, floor(entity->x), floor(entity->y) + 1) != AIR){
+        entity->isFalling = true;
+        entity->isOnGround = false;
+        entity->accY = GRAVITY_ACCELERATION;
+    }
+    else {
+        entity->isFalling = false;
+        entity->isOnGround = true;
+        entity->accY = 0;
+    }
+}
+
 void entityToBlockCollision(EntityNode *entity){
     entity->velX = -entity->velX;
 }
@@ -17,6 +60,22 @@ void addDeadEntity(EntityNode *entity, MapViewport *map){
     map->map->deadEntities = entity;
     entity->velY = GRAVITY_ACCELERATION;
     entity->velX = 0;
+}
+
+EntityNode* summonEntity(int type, float x, float y, MapViewport *map){
+    EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
+    entity->next = map->map->entityList;
+    map->map->entityList = entity;
+
+    entity->type = type;
+    entity->x = x;
+    entity->y = y;
+    entity->prevX = floor(x);
+    entity->prevY = floor(y);
+    setEntityDimensions(entity, type);
+    setEntityStartingVelocity(entity, map->map);
+    entity->entity = nullptr;
+    return entity;
 }
 
 void removeEntity(EntityNode *entity, MapViewport *map){
@@ -80,7 +139,7 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
 void entityFall(EntityNode *entity, MapViewport *map){
     if(entity->velY > TERMINAL_VELOCITY) {
         entity->velY = TERMINAL_VELOCITY;
-        entity->velY = 0;
+        entity->accY = 0;
     }
     else if(entity->velY < TERMINAL_VELOCITY) entity->accY = GRAVITY_ACCELERATION;
 
@@ -112,6 +171,21 @@ void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map){
     else if(entity->x > mario->x && entity->velX > 0) entity->velX = -entity->velX;
 
     if(entity->isOnGround && isOnLedge(entity, map)) entity->velX = -entity->velX;
+}
+
+void entityTick(MapViewport *map, EntityNode *mario){
+    EntityNode *itr = map->map->entityList;
+    while(itr != nullptr){
+        if(itr->type != MARIO) smartAI(itr, mario, map);
+        if(itr->isFalling) entityFall(itr, map);
+        itr->next;
+    }
+
+    itr = map->map->deadEntities;
+    while(itr != nullptr) {
+        if(itr->y > map->map->height) removeEntity(itr, map);
+        itr = itr->next;
+    }
 }
 
 #endif

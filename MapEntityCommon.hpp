@@ -1,6 +1,8 @@
 #ifndef MAP_ENTITY_COMMON_HPP
 #define MAP_ENTITY_COMMON_HPP
 
+#define CHUNK_LEN 32 // The map is split into chunks with dimensions map.height * CHUNK_LEN to avoid memory allocation problems
+
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,
     CANON_SUPPORT, TREE_TRUNK, LEAVES, LEAVES_LEFT, LEAVES_RIGHT, MUSHROOM_TRUNK, MUSHROOM_TOP, MUSHROOM_LEFT, MUSHROOM_RIGHT,
@@ -76,6 +78,40 @@ typedef struct {
     short yFront;
     Map *map;
 } MapViewport;
+
+unsigned char getMapBlock(Map *map, int x, int y) // Get the block code from the map at coords. (x,y)
+{
+    if(x >= map->length || x < 0) return 255;
+    if(y >= map->height || y < 0) return 255;
+
+    return map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
+}
+
+bool setMapBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the map at coords. (x,y)
+{
+    if(x >= map->length || x < 0) return false;
+    if(y >= map->height || y < 0) return false;
+
+    map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
+    return true;
+}
+
+unsigned char getBackgroundBlock(Map *map, int x, int y) // Get the block code from the background at coords (x,y)
+{
+    if(x >= map->length || x < 0) return 255;
+    if(y >= map->height || y < 0) return 255;
+
+    return map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
+}
+
+bool setBackgroundBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the background at coords. (x,y)
+{
+    if(x >= map->length || x < 0) return false;
+    if(y >= map->height || y < 0) return false;
+
+    map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
+    return true;
+}
 
 #include "EntityHandler.hpp"
 #include "MapLoader.hpp"

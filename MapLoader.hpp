@@ -13,44 +13,9 @@ using namespace std;
 #define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
-#define CHUNK_LEN 32 // The map is split into chunks with dimensions map.height * CHUNK_LEN to avoid memory allocation problems
 #define VIEWPORT_WIDTH 20
 #define VIEWPORT_HEIGHT 15
 
-
-unsigned char getMapBlock(Map *map, int x, int y) // Get the block code from the map at coords. (x,y)
-{
-    if(x >= map->length || x < 0) return 255;
-    if(y >= map->height || y < 0) return 255;
-
-    return map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
-}
-
-bool setMapBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the map at coords. (x,y)
-{
-    if(x >= map->length || x < 0) return false;
-    if(y >= map->height || y < 0) return false;
-
-    map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
-    return false;
-}
-
-unsigned char getBackgroundBlock(Map *map, int x, int y) // Get the block code from the background at coords (x,y)
-{
-    if(x >= map->length || x < 0) return 255;
-    if(y >= map->height || y < 0) return 255;
-
-    return map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
-}
-
-bool setBackgroundBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the background at coords. (x,y)
-{
-    if(x >= map->length || x < 0) return false;
-    if(y >= map->height || y < 0) return false;
-
-    map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
-    return false;
-}
 
 Block getBlock(unsigned char blockCode) // Convert a block code to a block
 {
@@ -115,27 +80,18 @@ Block getBlock(unsigned char blockCode) // Convert a block code to a block
     return block;
 }
 
-EntityNode* getEntity(int entityCode, int x, int y, EntityNode *entityList = nullptr){
+EntityNode* getEntity(int entityCode, int x, int y, Map *map){
     EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
-    if(entityList != nullptr) {
-        EntityNode *itr = entityList;
-        while(itr->next != nullptr) itr = itr->next;
-        itr->next = entity;
-    }
+    entity->next = map->entityList;
+    map->entityList = entity;
 
     entity->type = entityCode - PIRANHA_PLANT_BLOCK;
-    entity->next = nullptr;
     entity->x = x;
     entity->y = y;
     entity->prevX = x;
     entity->prevY = y;
-    entity->height = 1.0f;
-    entity->width = 1.0f;
-    entity->isFalling = false;
-    entity->velX = ENTITY_SPEED;
-    entity->velY = 0;
-    entity->accX = 0;
-    entity->accY = 0;
+    setEntityDimensions(entity, entity->type);
+    setEntityStartingVelocity(entity, map);
     entity->entity = nullptr;
     return entity;
 }
@@ -337,8 +293,8 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
             else {
                 for (; y < yPos; y++) setMapBlock(map, x, y, AIR);
                 if(block >= PIRANHA_PLANT_BLOCK && block <= PLATFORM_BLOCK){
-                    if(map->entityList == nullptr) map->entityList = getEntity(block, x, y);
-                    else getEntity(block, x, y, map->entityList);
+                    if(map->entityList == nullptr) map->entityList = getEntity(block, x, y, map);
+                    else getEntity(block, x, y, map);
                     if(block == PIRANHA_PLANT_BLOCK) block = PIPE_TOP_RIGHT;
                     else if(block == CHEEP_CHEEP_BLOCK || block == BLOOBER_BLOCK) block = WATER;
                     else block = AIR;
