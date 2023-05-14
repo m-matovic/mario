@@ -4,7 +4,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
+#include <cmath>
 #include <iostream>
+#include <cstring>
 
 using namespace std;
 
@@ -88,8 +90,6 @@ EntityNode* getEntity(int entityCode, int x, int y, Map *map){
     entity->type = entityCode - PIRANHA_PLANT_BLOCK;
     entity->x = x;
     entity->y = y;
-    entity->prevX = x;
-    entity->prevY = y;
     setEntityDimensions(entity, entity->type);
     setEntityStartingVelocity(entity, map);
     entity->entity = nullptr;
@@ -430,38 +430,8 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
     fclose(mapFile);
 }
 
-void mapMaker() {
-    //setbuf(stdout, 0);
-    char *fileName = static_cast<char *>(malloc(20 * sizeof(char)));
-    printf("File name:\n");
-    scanf("%15s", fileName);
-    int length, height;
-    printf("Map length and height:\n");
-    scanf("%d %d", &length, &height);
-
-    Map *map = static_cast<Map *>(malloc(sizeof(Map)));
-    map->height = height;
-    map->length = length;
-    map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
-    for (int i = 0; i < map->length / CHUNK_LEN; i++)
-        map->map[i] = static_cast<unsigned char *> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
-    if (map->length % CHUNK_LEN > 0)
-        map->map[map->length / CHUNK_LEN] = static_cast<unsigned char *> (malloc(
-                sizeof(unsigned char) * map->height * (map->length % CHUNK_LEN)));
-
-    map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
-    for (int i = 0; i < map->length / CHUNK_LEN; i++)
-        map->background[i] = static_cast<unsigned char *> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
-    if (map->length % CHUNK_LEN > 0)
-        map->background[map->length / CHUNK_LEN] = static_cast<unsigned char *> (malloc(
-                sizeof(unsigned char) * map->height * (map->length % CHUNK_LEN)));
-
-    for (int x = 0; x < map->length; x++)
-        for (int y = 0; y < map->height; y++) {
-            setMapBlock(map, x, y, AIR);
-            setBackgroundBlock(map, x, y, AIR_BG);
-        }
-
+char printPalletFG(int type) //Temporary function until graphics are added
+{
     char printPallet[64];
     {
         printPallet[AIR] = ' ';
@@ -529,12 +499,66 @@ void mapMaker() {
         printPallet[BOWSER_BRIDGE] = '=';
         printPallet[AXE] = 'P';
     }
+    return printPallet[type];
+}
+
+MapViewport* mapInit(string location){
+    int size = 0;
+    for(size = 0; size < 16; size++) if(location[size] == 0) break;
+    location += ".map";
+    Map *map = loadMap(location.c_str(), false);
+
+    location.replace(location.length()-3, 3, "bg");
+    loadMap(location.c_str(), true, map);
+    MapViewport *mapViewport = getViewport(map);
+    return mapViewport;
+}
+
+void mapMaker(string location = "") {
+    Map *map;
+    char *fileName = static_cast<char *>(malloc(20 * sizeof(char)));
+    if(location.empty()){
+        printf("File name:\n");
+        scanf("%15s", fileName);
+        int length, height;
+        printf("Map length and height:\n");
+        scanf("%d %d", &length, &height);
+    
+        map = static_cast<Map *>(malloc(sizeof(Map)));
+        map->height = height;
+        map->length = length;
+        map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
+        for (int i = 0; i < map->length / CHUNK_LEN; i++)
+            map->map[i] = static_cast<unsigned char *> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
+        if (map->length % CHUNK_LEN > 0)
+            map->map[map->length / CHUNK_LEN] = static_cast<unsigned char *> (malloc(
+                    sizeof(unsigned char) * map->height * (map->length % CHUNK_LEN)));
+
+        map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char *) * (map->length / CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
+        for (int i = 0; i < map->length / CHUNK_LEN; i++)
+            map->background[i] = static_cast<unsigned char *> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
+        if (map->length % CHUNK_LEN > 0)
+            map->background[map->length / CHUNK_LEN] = static_cast<unsigned char *> (malloc(
+                    sizeof(unsigned char) * map->height * (map->length % CHUNK_LEN)));
+
+        for (int x = 0; x < map->length; x++)
+            for (int y = 0; y < map->height; y++) {
+                setMapBlock(map, x, y, AIR);
+                setBackgroundBlock(map, x, y, AIR_BG);
+            }
+    }
+    else {
+        MapViewport *viewport = mapInit(location);
+        map = viewport->map;
+        strcpy(fileName, location.c_str());
+    }
+
     bool hideFG = false;
     char chunk = 0;
 
     fflush(stdin);
     while (true) {
-        system("cls");
+        system("clear");
         printf("  ");
         for (int x = chunk * CHUNK_LEN; x < (chunk+1) * CHUNK_LEN && x < map->length; x++) printf("%3d", x % 100);
         printf("\n");
@@ -542,10 +566,10 @@ void mapMaker() {
             printf("%2d", y % 100);
             for (int x = chunk * CHUNK_LEN; x < (chunk+1) * CHUNK_LEN && x < map->length; x++)
                 if (getMapBlock(map, x, y) != AIR && !hideFG && getMapBlock(map, x, y) != 255)
-                    printf("%c%c%c", printPallet[getMapBlock(map, x, y) ],
-                           printPallet[getMapBlock(map, x, y) ], printPallet[getMapBlock(map, x, y) ]);
+                    printf("%c%c%c", printPalletFG(getMapBlock(map, x, y)),
+                           printPalletFG(getMapBlock(map, x, y)), printPalletFG(getMapBlock(map, x, y)));
                 else if(getMapBlock(map, x, y == 255)) printf("?");
-                else printf(" %c ", printPallet[getBackgroundBlock(map, x, y) ]);
+                else printf(" %c ", printPalletFG(getBackgroundBlock(map, x, y)));
             printf("%2d", y % 100);
             printf("\n");
         }
@@ -607,30 +631,23 @@ void mapMaker() {
                 free(fileName);
                 return;
             }
+            case 'q': // Quit without saving
+                free(fileName);
+                return;
         }
         fflush(stdin);
     }
-}
-
-MapViewport* mapInit(string location){
-    int size = 0;
-    for(size = 0; size < 16; size++) if(location[size] == 0) break;
-    location += ".map";
-    Map *map = loadMap(location.c_str(), false);
-
-    location.replace(location.length()-3, 3, "bg");
-    loadMap(location.c_str(), true, map);
-    MapViewport *mapViewport = getViewport(map);
-    return mapViewport;
 }
 
 void printMap(MapViewport *map, int blocksPerLine){
     int x = 0;
     while(x < map->map->length){
         for(int y = 0; y < map->map->height; y++){
-            for(int i = 0; i < blocksPerLine && x < map->map->length; i++, x++) cout << getMapBlock(map->map, x, y);
+            for(int i = x; i < min(x+blocksPerLine, (int) map->map->length); i++) cout << printPalletFG(getMapBlock(map->map, i, y));
             cout << endl;
         }
+        x += blocksPerLine;
+        cout << endl;
     }
 }
 

@@ -38,8 +38,6 @@ struct EntityNode;
 typedef struct EntityNode {
     float x;
     float y;
-    int prevX;
-    int prevY;
 
     float height;
     float width;
@@ -54,6 +52,11 @@ typedef struct EntityNode {
     void* entity;
     EntityNode *next;
 } EntityNode;
+
+typedef struct {
+    float timer;
+    int state;
+} Timer;
 
 typedef struct {
     EntityNode *entityList;
