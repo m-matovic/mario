@@ -10,10 +10,20 @@ int main(void)
     printMap(map, 50);
 
     int showmenu = 1;
-    while(!shouldEnd() && showmenu)
+    while(showmenu)
     {
         frminit();
         showmenu = menu();
+        showmenu &= !shouldEnd();
+        frmdraw();
+    }
+    
+    loadbg("clouds.png");
+    while(!shouldEnd())
+    {
+        frminit();
+        drawbg();
+        drawsprite("block_overworld.png", 100, 100);
         frmdraw();
     }
 
