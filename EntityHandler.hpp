@@ -11,6 +11,9 @@
 #define PIRANHA_RANGE 5.0f
 #define PIRANHA_DOWNTIME 5.0f
 #define PIRANHA_UPTIME 5.0f
+#define JUMP_ACCELERATION 2.0f
+#define FIRE_BAR_LENGTH 6
+#define FIRE_BAR_ANGULAR_VELOCITY 1.0f
 
 void setEntityDimensions(EntityNode *entity, int type){
     switch(type){
@@ -22,7 +25,7 @@ void setEntityDimensions(EntityNode *entity, int type){
             entity->height = 2.0f;
         case FIRE_BAR:
             entity->width = 0.5f;
-            entity->height = 3.0f;
+            entity->height = 0.5f;
             break;
         case PIRANHA_PLANT:
         case BLOOBER:
@@ -67,6 +70,31 @@ void addDeadEntity(EntityNode *entity, MapViewport *map){
 }
 
 EntityNode* summonEntity(int type, float x, float y, MapViewport *map){
+    if(type == FIRE_BAR){
+        EntityNode *result;
+        for(int i = 0; i < FIRE_BAR_LENGTH; i++){
+            EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
+            entity->next = map->map->entityList;
+            map->map->entityList = entity;
+
+            entity->type = type;
+            setEntityDimensions(entity, type);
+            entity->x = x + (1.0f - entity->width) / 2;
+            entity->y = y - (1.0f - entity->height) / 2 + i * entity->height;
+            entity->isOnGround = true;
+            entity->isFalling = false;
+            entity->velX = 0;
+            entity->velY = 0;
+            entity->accX = 0;
+            entity->accY = 0;
+        
+            entity->entity = malloc(sizeof(Rotation));
+            Rotation *rotation = static_cast<Rotation*>(entity->entity);
+            rotation->angle = 0;
+            rotation->radius = 0;
+        }
+    }
+
     EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
     entity->next = map->map->entityList;
     map->map->entityList = entity;
@@ -202,14 +230,14 @@ void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
             if(timer->timer == 0 && entity->x - PIRANHA_RANGE < mario->x && mario->x < entity->x + entity->width + PIRANHA_RANGE) {
                 timer->state = 2;
                 timer->timer = ((float)entity->height) / ENTITY_SPEED;
-                entity->velY = ENTITY_SPEED;
+                entity->velY = -ENTITY_SPEED;
             }
             break;
         case 1: // Piranha is exposed
             if(timer->timer == 0) {
                 timer->state = 3;
                 timer->timer = ((float)entity->height) / ENTITY_SPEED;
-                entity->velY = -ENTITY_SPEED;
+                entity->velY = ENTITY_SPEED;
             }
             break;
         case 2: // Piranha is going up
@@ -231,9 +259,29 @@ void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
     }
 }
 
+void koopaParatroopaAI(EntityNode *entity){
+    if(entity->isOnGround) entity->velY = -JUMP_ACCELERATION;
+}
+
+void fireBallAI(EntityNode *entity, float timeDelta){
+    Rotation *rotation = static_cast<Rotation*> (entity->entity);
+    float prevAngle = rotation->angle;
+    rotation->angle += FIRE_BAR_ANGULAR_VELOCITY * timeDelta;
+    while(rotation->angle > 2 * M_PI) rotation->angle -= 2 * M_PI;
+
+    entity->x += (1.0f - entity->width)/2;
+    entity->x += rotation->radius * (sin(rotation->angle) - sin(prevAngle));
+    entity->x -= (1.0f - entity->width)/2;
+    
+    entity->y -= (1.0f - entity->height)/2;
+    entity->y += rotation->radius * (cos(rotation->angle) - cos(prevAngle));
+    entity->y += (1.0f - entity->height)/2;
+}
+
 void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
     EntityNode *itr = map->map->entityList;
     while(itr != nullptr){
+        if(itr->type == KOOPA_PARATROOPA) koopaParatroopaAI(itr);
         if(itr->type != MARIO && itr->type != PIRANHA_PLANT) smartAI(itr, mario, map, timeDelta);
         else if(itr->type == PIRANHA_PLANT) piranhaPlantAI(itr, mario, timeDelta);        
         if(itr->isFalling) entityFall(itr, map);

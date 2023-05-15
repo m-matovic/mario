@@ -59,6 +59,11 @@ typedef struct {
 } Timer;
 
 typedef struct {
+    float radius;
+    float angle;
+} Rotation;
+
+typedef struct {
     EntityNode *entityList;
     EntityNode *deadEntities;
     unsigned char **map;
