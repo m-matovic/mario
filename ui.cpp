@@ -172,7 +172,7 @@ void drawbg()
 void drawsprite(const char *filename, int x, int y)
 {
     int width, height;
-    struct nk_image sprite = img_load_size(filename, &w, &h);
+    struct nk_image sprite = img_load_size(filename, &width, &height);
 
     struct nk_command_buffer *out = nk_window_get_canvas(context);
     nk_draw_image(out, nk_rect(x, y, width, height), &sprite, nk_rgba(255, 255, 255, 255));
