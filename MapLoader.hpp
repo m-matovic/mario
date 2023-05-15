@@ -83,17 +83,7 @@ Block getBlock(unsigned char blockCode) // Convert a block code to a block
 }
 
 EntityNode* getEntity(int entityCode, int x, int y, Map *map){
-    EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
-    entity->next = map->entityList;
-    map->entityList = entity;
-
-    entity->type = entityCode - PIRANHA_PLANT_BLOCK;
-    entity->x = x;
-    entity->y = y;
-    setEntityDimensions(entity, entity->type);
-    setEntityStartingVelocity(entity, map);
-    entity->entity = nullptr;
-    return entity;
+    return summonEntity(entityCode - PIRANHA_PLANT, x, y, map);
 }
 
 MapViewport* getViewport(Map *map) // Get a viewport of a map, which displays all the blocks within a predefined area and can be shifted in any direction.
@@ -295,9 +285,15 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
                 if(block >= PIRANHA_PLANT_BLOCK && block <= PLATFORM_BLOCK){
                     if(map->entityList == nullptr) map->entityList = getEntity(block, x, y, map);
                     else getEntity(block, x, y, map);
+
                     if(block == PIRANHA_PLANT_BLOCK) block = PIPE_TOP_RIGHT;
                     else if(block == CHEEP_CHEEP_BLOCK || block == BLOOBER_BLOCK) block = WATER;
                     else block = AIR;
+                }
+                if(block == BOWSER_BRIDGE && y > map->height - 1 && getMapBlock(map, x, y+1) == BOWSER_BRIDGE) {
+                    if(map->entityList == nullptr) map->entityList = getEntity(PIRANHA_PLANT + BOWSER, x, y, map);
+                    else getEntity(PIRANHA_PLANT + BOWSER, x, y, map);
+                    block = AIR;
                 }
                 setMapBlock(map, x, y, block);
             }

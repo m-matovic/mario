@@ -2,122 +2,18 @@
 #define ENTITY_HANDLER_H
 
 //#include "Movement.h"
-#include <math.h>
+#include <cmath>
 #include <cstdlib>
-#define ENTITY_SPEED 1.0f
 #define TERMINAL_VELOCITY 10.0f
-#define GRAVITY_ACCELERATION 1.0f
 #define AVOIDANCE_VELOCITY 1.0f
 #define PIRANHA_RANGE 5.0f
 #define PIRANHA_DOWNTIME 5.0f
 #define PIRANHA_UPTIME 5.0f
 #define JUMP_ACCELERATION 2.0f
-#define FIRE_BAR_LENGTH 6
 #define FIRE_BAR_ANGULAR_VELOCITY 1.0f
-
-void setEntityDimensions(EntityNode *entity, int type){
-    switch(type){
-        case PLATFORM:
-            entity->width = 3.0f;
-            entity->height = 0.5f;
-        case HAMMER_BROTHER:
-            entity->width = 1.0f;
-            entity->height = 2.0f;
-        case FIRE_BAR:
-            entity->width = 0.5f;
-            entity->height = 0.5f;
-            break;
-        case PIRANHA_PLANT:
-        case BLOOBER:
-        case KOOPA_TROOPA:
-        case KOOPA_PARATROOPA:
-        case LAKITU:
-            entity->height = 1.5f;
-            entity->width = 1.0f;
-            break;
-        default:
-            entity->height = 1.0f;
-            entity->width = 1.0f;
-            break;
-    }
-}
-
-void setEntityStartingVelocity(EntityNode *entity, Map *map) {
-    entity->velX = ENTITY_SPEED;
-    entity->accX = 0;
-    entity->velY = 0;
-    if(getMapBlock(map, floor(entity->x), floor(entity->y) + 1) != AIR){
-        entity->isFalling = true;
-        entity->isOnGround = false;
-        entity->accY = GRAVITY_ACCELERATION;
-    }
-    else {
-        entity->isFalling = false;
-        entity->isOnGround = true;
-        entity->accY = 0;
-    }
-}
-
-void entityToBlockCollision(EntityNode *entity){
-    entity->velX = -entity->velX;
-}
-
-void addDeadEntity(EntityNode *entity, MapViewport *map){
-    entity->next = map->map->deadEntities;
-    map->map->deadEntities = entity;
-    entity->velY = GRAVITY_ACCELERATION;
-    entity->velX = 0;
-}
-
-EntityNode* summonEntity(int type, float x, float y, MapViewport *map){
-    if(type == FIRE_BAR){
-        EntityNode *result;
-        for(int i = 0; i < FIRE_BAR_LENGTH; i++){
-            EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
-            entity->next = map->map->entityList;
-            map->map->entityList = entity;
-
-            entity->type = type;
-            setEntityDimensions(entity, type);
-            entity->x = x + (1.0f - entity->width) / 2;
-            entity->y = y - (1.0f - entity->height) / 2 + i * entity->height;
-            entity->isOnGround = true;
-            entity->isFalling = false;
-            entity->velX = 0;
-            entity->velY = 0;
-            entity->accX = 0;
-            entity->accY = 0;
-        
-            entity->entity = malloc(sizeof(Rotation));
-            Rotation *rotation = static_cast<Rotation*>(entity->entity);
-            rotation->angle = 0;
-            rotation->radius = 0;
-        }
-    }
-
-    EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
-    entity->next = map->map->entityList;
-    map->map->entityList = entity;
-
-    entity->type = type;
-    entity->x = x;
-    entity->y = y;
-    setEntityDimensions(entity, type);
-    setEntityStartingVelocity(entity, map->map);
-    switch(type){
-        case PIRANHA_PLANT: {
-            entity->entity = malloc(sizeof(Timer));
-            Timer *timer = static_cast<Timer*>(entity->entity);
-            timer->timer = 0;
-            timer->state = 0;
-            break;
-        }
-        default:
-            entity->entity = nullptr;
-            break;
-        }
-    return entity;
-}
+#define BOWSER_HAMMER_COOLDOWN 2.0f
+#define BOWSER_FIRE_COOLDOWN 1.0f
+#define BOWSER_RANGE 10.0f
 
 void removeEntity(EntityNode *entity, MapViewport *map){
     EntityNode *itr = map->map->deadEntities;
@@ -276,6 +172,32 @@ void fireBallAI(EntityNode *entity, float timeDelta){
     entity->y -= (1.0f - entity->height)/2;
     entity->y += rotation->radius * (cos(rotation->angle) - cos(prevAngle));
     entity->y += (1.0f - entity->height)/2;
+}
+
+void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta){
+    Timer *timer = static_cast<Timer*>(entity->entity);
+    if(mario->x < entity->x + entity->width/2) timer->direction = false;
+    else timer->direction = true;
+
+    timer->timer -= timeDelta;
+    if(timer->timer < 0) timer->timer = 0;
+
+    switch(timer->state){
+        case 0: //Ready to fire
+            if(timer->timer == 0 && entity->x - BOWSER_RANGE < mario->x && mario->x < entity->x + entity->width + BOWSER_RANGE){
+                timer->timer = BOWSER_HAMMER_COOLDOWN;
+                timer->state = 1;
+                //TO ADD: summoning fireballs
+            }
+            break;
+        case 1: //READY TO HAMMER
+            if(timer->timer == 0 && entity->x - BOWSER_RANGE < mario->x && mario->x < entity->x + entity->width + BOWSER_RANGE){
+                timer->timer = BOWSER_FIRE_COOLDOWN;
+                timer->state = 0;
+                //TO ADD: summoning hammers
+            }
+            break;
+    }
 }
 
 void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){

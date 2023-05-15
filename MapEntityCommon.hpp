@@ -1,7 +1,12 @@
 #ifndef MAP_ENTITY_COMMON_HPP
 #define MAP_ENTITY_COMMON_HPP
 
+#include <cmath>
+
 #define CHUNK_LEN 32 // The map is split into chunks with dimensions map.height * CHUNK_LEN to avoid memory allocation problems
+#define FIRE_BAR_LENGTH 6
+#define GRAVITY_ACCELERATION 1.0f
+#define ENTITY_SPEED 1.0f
 
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,
@@ -31,7 +36,7 @@ enum BlockContent {
 enum Entities {
     PIRANHA_PLANT, BLOOBER, BUZZY_BEETLE, CHEEP_CHEEP, FIRE_BAR, HAMMER_BROTHER, KOOPA_PARATROOPA,
     KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, PLATFORM, FIREFLOWER,
-    KOOPA_SHELL, MARIO
+    KOOPA_SHELL, MARIO, BOWSER
 };
 
 struct EntityNode;
@@ -56,6 +61,7 @@ typedef struct EntityNode {
 typedef struct {
     float timer;
     int state;
+    bool direction;
 } Timer;
 
 typedef struct {
@@ -119,6 +125,119 @@ bool setBackgroundBlock(Map *map, int x, int y, unsigned char block) // Set the 
 
     map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
     return true;
+}
+
+void setEntityDimensions(EntityNode *entity, int type){
+    switch(type){
+        case PLATFORM:
+            entity->width = 3.0f;
+            entity->height = 0.5f;
+        case HAMMER_BROTHER:
+            entity->width = 1.0f;
+            entity->height = 2.0f;
+        case FIRE_BAR:
+            entity->width = 0.5f;
+            entity->height = 0.5f;
+            break;
+        case PIRANHA_PLANT:
+        case BLOOBER:
+        case KOOPA_TROOPA:
+        case KOOPA_PARATROOPA:
+        case LAKITU:
+            entity->height = 1.5f;
+            entity->width = 1.0f;
+            break;
+        default:
+            entity->height = 1.0f;
+            entity->width = 1.0f;
+            break;
+    }
+}
+
+void setEntityStartingVelocity(EntityNode *entity, Map *map) {
+    entity->velX = ENTITY_SPEED;
+    entity->accX = 0;
+    entity->velY = 0;
+    if(getMapBlock(map, floor(entity->x), floor(entity->y) + 1) != AIR){
+        entity->isFalling = true;
+        entity->isOnGround = false;
+        entity->accY = GRAVITY_ACCELERATION;
+    }
+    else {
+        entity->isFalling = false;
+        entity->isOnGround = true;
+        entity->accY = 0;
+    }
+}
+
+void entityToBlockCollision(EntityNode *entity){
+    entity->velX = -entity->velX;
+}
+
+void addDeadEntity(EntityNode *entity, MapViewport *map){
+    entity->next = map->map->deadEntities;
+    map->map->deadEntities = entity;
+    entity->velY = GRAVITY_ACCELERATION;
+    entity->velX = 0;
+}
+
+EntityNode* summonEntity(int type, float x, float y, Map *map){
+    if(type == FIRE_BAR){
+        EntityNode *result;
+        for(int i = 0; i < FIRE_BAR_LENGTH; i++){
+            EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
+            entity->next = map->entityList;
+            map->entityList = entity;
+
+            entity->type = type;
+            setEntityDimensions(entity, type);
+            entity->x = x + (1.0f - entity->width) / 2;
+            entity->y = y - (1.0f - entity->height) / 2 + i * entity->height;
+            entity->isOnGround = true;
+            entity->isFalling = false;
+            entity->velX = 0;
+            entity->velY = 0;
+            entity->accX = 0;
+            entity->accY = 0;
+        
+            entity->entity = malloc(sizeof(Rotation));
+            Rotation *rotation = static_cast<Rotation*>(entity->entity);
+            rotation->angle = 0;
+            rotation->radius = 0;
+            result = entity;
+        }
+        return result;
+    }
+
+    EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
+    entity->next = map->entityList;
+    map->entityList = entity;
+
+    entity->type = type;
+    entity->x = x;
+    entity->y = y;
+    setEntityDimensions(entity, type);
+    setEntityStartingVelocity(entity, map);
+    switch(type){
+        case PIRANHA_PLANT: {
+            entity->entity = malloc(sizeof(Timer));
+            Timer *timer = static_cast<Timer*>(entity->entity);
+            timer->timer = 0;
+            timer->state = 0;
+            break;
+        }
+        case BOWSER: {
+            entity->entity = malloc(sizeof(Timer));
+            Timer *timer = static_cast<Timer*>(entity->entity);
+            timer->timer = 0;
+            timer->state = 0;
+            timer->direction = false;
+        }
+        default:
+            entity->entity = nullptr;
+            break;
+        }
+    return entity;
 }
 
 #include "EntityHandler.hpp"
