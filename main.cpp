@@ -23,7 +23,7 @@ int main(void)
     {
         frminit();
         drawbg();
-        drawsprite("block_overworld.png", 100, 100);
+        drawsprite("block_overworld.png", 1200, 100);
         frmdraw();
     }
 
