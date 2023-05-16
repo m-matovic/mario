@@ -7,6 +7,7 @@
 #define FIRE_BAR_LENGTH 6
 #define GRAVITY_ACCELERATION 1.0f
 #define ENTITY_SPEED 1.0f
+#define PROJECTILE_LIFE 5.0f
 
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,
@@ -36,7 +37,7 @@ enum BlockContent {
 enum Entities {
     PIRANHA_PLANT, BLOOBER, BUZZY_BEETLE, CHEEP_CHEEP, FIRE_BAR, HAMMER_BROTHER, KOOPA_PARATROOPA,
     KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, PLATFORM, FIREFLOWER,
-    KOOPA_SHELL, MARIO, BOWSER
+    KOOPA_SHELL, BOWSER, HAMMER, FIREBALL, MARIO
 };
 
 struct EntityNode;
@@ -52,7 +53,6 @@ typedef struct EntityNode {
     float accY;
 
     unsigned char type;
-    bool isFalling;
     bool isOnGround;
     void* entity;
     EntityNode *next;
@@ -136,7 +136,12 @@ void setEntityDimensions(EntityNode *entity, int type){
             entity->width = 1.0f;
             entity->height = 2.0f;
         case FIRE_BAR:
+        case HAMMER:
             entity->width = 0.5f;
+            entity->height = 0.5f;
+            break;
+        case FIREBALL:
+            entity->width = 1.5f;
             entity->height = 0.5f;
             break;
         case PIRANHA_PLANT:
@@ -147,6 +152,9 @@ void setEntityDimensions(EntityNode *entity, int type){
             entity->height = 1.5f;
             entity->width = 1.0f;
             break;
+        case BOWSER:
+            entity->height = 2.0f;
+            entity->width = 2.0f;
         default:
             entity->height = 1.0f;
             entity->width = 1.0f;
@@ -159,12 +167,10 @@ void setEntityStartingVelocity(EntityNode *entity, Map *map) {
     entity->accX = 0;
     entity->velY = 0;
     if(getMapBlock(map, floor(entity->x), floor(entity->y) + 1) != AIR){
-        entity->isFalling = true;
         entity->isOnGround = false;
         entity->accY = GRAVITY_ACCELERATION;
     }
     else {
-        entity->isFalling = false;
         entity->isOnGround = true;
         entity->accY = 0;
     }
@@ -194,7 +200,6 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             entity->x = x + (1.0f - entity->width) / 2;
             entity->y = y - (1.0f - entity->height) / 2 + i * entity->height;
             entity->isOnGround = true;
-            entity->isFalling = false;
             entity->velX = 0;
             entity->velY = 0;
             entity->accX = 0;
@@ -232,6 +237,22 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             timer->timer = 0;
             timer->state = 0;
             timer->direction = false;
+        }
+        case FIREBALL:
+            {
+            entity->entity = malloc(sizeof(Timer));
+            Timer *timer = static_cast<Timer*>(entity->entity);
+            timer->timer = PROJECTILE_LIFE;
+            timer->state = 0;
+            break;
+        }
+        case HAMMER:
+            {
+            entity->entity = malloc(sizeof(Timer));
+            Timer *timer = static_cast<Timer*>(entity->entity);
+            timer->timer = PROJECTILE_LIFE;
+            timer->state = 0;
+            break;
         }
         default:
             entity->entity = nullptr;
