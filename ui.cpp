@@ -22,9 +22,13 @@
 
 #include "ui.h"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 GLFWwindow *window;
 struct nk_glfw glfw = {0};
 struct nk_context *context;
+struct nk_image background;
 
 static void error_callback(int e, const char *d)
 {
@@ -33,7 +37,6 @@ static void error_callback(int e, const char *d)
 
 void glfwinit(const char *wintag)
 {
-    /* glfw = {0}; */
     glfwSetErrorCallback(error_callback);
 
     if(!glfwInit())
@@ -85,39 +88,100 @@ void frminit(void)
 {
     glfwPollEvents();
     nk_glfw3_new_frame(&glfw);
+
+    nk_begin(context, "game", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0);
 }
 
 int menu(void)
 {
-    if(nk_begin(context, "test", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0))
+    nk_layout_row_dynamic(context, 200, 1);
+
+    nk_layout_row_dynamic(context, 80, 1);
+    if(nk_button_label(context, "Play"))
+        return 0;
+
+    nk_layout_row_dynamic(context, 80, 1);
+    if(nk_button_label(context, "Quit"))
     {
-        nk_layout_row_dynamic(context, 200, 1);
-
-        nk_layout_row_dynamic(context, 80, 1);
-        if(nk_button_label(context, "Play"))
-            return 0;
-
-        nk_layout_row_dynamic(context, 80, 1);
-        if(nk_button_label(context, "Quit"))
-            exit(0);
+        glfwend();
+        exit(0);
     }
-    nk_end(context);
 
     return 1;
 }
 
-void drawbg(struct nk_image bg)
+static struct nk_image img_load(const char *filename)
 {
-    if(nk_begin(context, "test", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0))
+    int x, y, n;
+    GLuint texture;
+    unsigned char *data = stbi_load(filename, &x, &y, &n, 4);
+    if(!data)
     {
-        nk_layout_row_static(context, WINDOW_HEIGHT, WINDOW_WIDTH, 1);
-        if(nk_button_image(context, bg));
+        printf("[SDL} failed to load image from file %s\n", filename);
+        exit(0);
     }
-    nk_end(context);
+
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, x, y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
+    return nk_image_id((int)texture);
+}
+
+static struct nk_image img_load_size(const char *filename, int *x, int *y)
+{
+    int n;
+    GLuint texture;
+    unsigned char *data = stbi_load(filename, x, y, &n, 4);
+    if(!data)
+    {
+        printf("[SDL} failed to load image from file %s\n", filename);
+        exit(0);
+    }
+
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, *x, *y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(data);
+
+    return nk_image_id((int)texture);
+}
+
+void loadbg(const char *filename)
+{
+    background = img_load(filename);
+}
+
+void drawbg()
+{
+    struct nk_command_buffer *out = nk_window_get_canvas(context);
+    nk_draw_image(out, nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), &background, nk_rgba(255, 255, 255, 255));
+}
+
+void drawsprite(const char *filename, int x, int y)
+{
+    int width, height;
+    struct nk_image sprite = img_load_size(filename, &width, &height);
+
+    struct nk_command_buffer *out = nk_window_get_canvas(context);
+    nk_draw_image(out, nk_rect(x, y, width, height), &sprite, nk_rgba(255, 255, 255, 255));
 }
 
 void frmdraw(void)
 {
+    nk_end(context);
+
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glClear(GL_COLOR_BUFFER_BIT);
     nk_glfw3_render(&glfw, NK_ANTI_ALIASING_ON, MAX_VERTEX_BUFFER, MAX_ELEMENT_BUFFER);
