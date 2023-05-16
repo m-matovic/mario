@@ -18,12 +18,13 @@ int main(void)
         frmdraw();
     }
     
-    loadbg("clouds.png");
+    load_backgrounds();
+    load_blocks();
     while(!shouldEnd())
     {
         frminit();
-        drawbg();
-        drawsprite("block_overworld.png", 1200, 100);
+        draw_background(21, 1200, 100);
+        draw_block(36, 1200, 100);
         frmdraw();
     }
 
