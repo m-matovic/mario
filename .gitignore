@@ -2,3 +2,5 @@
 /main.exe
 /cmake-build-debug/
 /.gitignore
+/Nuklear/
+/*.o

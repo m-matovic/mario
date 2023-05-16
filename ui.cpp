@@ -248,6 +248,31 @@ void draw_block(int type, int x, int y)
     nk_draw_image(out, nk_rect(x, y, SPRITE_SIZE, SPRITE_SIZE), sprite, nk_rgba(255, 255, 255, 255));
 }
 
+void status(int score, int coins, char *world, int time, int lives)
+{
+    nk_layout_row_dynamic(context, 48, 5);
+
+    nk_label(context, "SCORE", NK_TEXT_CENTERED);
+    nk_label(context, "COINS", NK_TEXT_CENTERED);
+    nk_label(context, "WORLD", NK_TEXT_CENTERED);
+    nk_label(context, "TIME", NK_TEXT_CENTERED);
+    nk_label(context, "LIVES", NK_TEXT_CENTERED);
+
+    char *nums = (char *)malloc(BUFSIZ);
+
+    sprintf(nums, "%d", score);
+    nk_label(context, nums, NK_TEXT_CENTERED);
+    sprintf(nums, "%d", coins);
+    nk_label(context, nums, NK_TEXT_CENTERED);
+    nk_label(context, world, NK_TEXT_CENTERED);
+    sprintf(nums, "%d", time);
+    nk_label(context, nums, NK_TEXT_CENTERED);
+    sprintf(nums, "%d", lives);
+    nk_label(context, nums, NK_TEXT_CENTERED);
+
+    free(nums);
+}
+
 void frmdraw(void)
 {
     nk_end(context);
