@@ -16,6 +16,7 @@
 
 #define WINDOW_HEIGHT 720
 #define WINDOW_WIDTH 1280
+#define SPRITE_SIZE 48
 
 #include "nuklear.h"
 #include "nuklear_glfw_gl3.h"
@@ -28,7 +29,8 @@
 GLFWwindow *window;
 struct nk_glfw glfw = {0};
 struct nk_context *context;
-struct nk_image background;
+struct nk_image backgrounds[25];
+struct nk_image blocks[41];
 
 static void error_callback(int e, const char *d)
 {
@@ -158,24 +160,117 @@ static struct nk_image img_load_size(const char *filename, int *x, int *y)
     return nk_image_id((int)texture);
 }
 
-void loadbg(const char *filename)
+void load_backgrounds(void)
 {
-    background = img_load(filename);
+    backgrounds[0] = img_load("background_overworld/0.png");
+    backgrounds[1] = img_load("background_overworld/1.png");
+    backgrounds[2] = img_load("background_overworld/2.png");
+    backgrounds[3] = img_load("background_overworld/3.png");
+    backgrounds[4] = img_load("background_overworld/4.png");
+    backgrounds[5] = img_load("background_overworld/5.png");
+    backgrounds[6] = img_load("background_overworld/6.png");
+    backgrounds[7] = img_load("background_overworld/7.png");
+    backgrounds[8] = img_load("background_overworld/8.png");
+    backgrounds[9] = img_load("background_overworld/9.png");
+    backgrounds[10] = img_load("background_overworld/10.png");
+    backgrounds[11] = img_load("background_overworld/11.png");
+    backgrounds[12] = img_load("background_overworld/12.png");
+    backgrounds[13] = img_load("background_overworld/13.png");
+    backgrounds[14] = img_load("background_overworld/14.png");
+    backgrounds[15] = img_load("background_overworld/15.png");
+    backgrounds[16] = img_load("background_overworld/16.png");
+    backgrounds[17] = img_load("background_overworld/17.png");
+    backgrounds[18] = img_load("background_overworld/18.png");
+    backgrounds[19] = img_load("background_overworld/19.png");
+    backgrounds[20] = img_load("background_overworld/20.png");
+    backgrounds[21] = img_load("background_overworld/21.png");
+    backgrounds[22] = img_load("background_overworld/22.png");
+    backgrounds[23] = img_load("background_overworld/23.png");
+    backgrounds[24] = img_load("background_overworld/24.png");
 }
 
-void drawbg()
+void load_blocks(void)
 {
-    struct nk_command_buffer *out = nk_window_get_canvas(context);
-    nk_draw_image(out, nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), &background, nk_rgba(255, 255, 255, 255));
+    blocks[0] = img_load("blocks_overworld/0.png");
+    blocks[1] = img_load("blocks_overworld/1.png");
+    blocks[2] = img_load("blocks_overworld/2.png");
+    blocks[3] = img_load("blocks_overworld/3.png");
+    blocks[4] = img_load("blocks_overworld/4.png");
+    blocks[5] = img_load("blocks_overworld/5.png");
+    blocks[6] = img_load("blocks_overworld/6.png");
+    blocks[7] = img_load("blocks_overworld/7.png");
+    blocks[8] = img_load("blocks_overworld/8.png");
+    blocks[9] = img_load("blocks_overworld/9.png");
+    blocks[10] = img_load("blocks_overworld/10.png");
+    blocks[11] = img_load("blocks_overworld/11.png");
+    blocks[12] = img_load("blocks_overworld/12.png");
+    blocks[13] = img_load("blocks_overworld/13.png");
+    blocks[14] = img_load("blocks_overworld/14.png");
+    blocks[15] = img_load("blocks_overworld/15.png");
+    blocks[16] = img_load("blocks_overworld/16.png");
+    blocks[17] = img_load("blocks_overworld/17.png");
+    blocks[18] = img_load("blocks_overworld/18.png");
+    blocks[19] = img_load("blocks_overworld/19.png");
+    blocks[20] = img_load("blocks_overworld/20.png");
+    blocks[21] = img_load("blocks_overworld/21.png");
+    blocks[22] = img_load("blocks_overworld/22.png");
+    blocks[23] = img_load("blocks_overworld/23.png");
+    blocks[24] = img_load("blocks_overworld/24.png");
+    blocks[25] = img_load("blocks_overworld/25.png");
+    blocks[26] = img_load("blocks_overworld/26.png");
+    blocks[27] = img_load("blocks_overworld/27.png");
+    blocks[28] = img_load("blocks_overworld/28.png");
+    blocks[29] = img_load("blocks_overworld/29.png");
+    blocks[30] = img_load("blocks_overworld/30.png");
+    blocks[31] = img_load("blocks_overworld/31.png");
+    blocks[32] = img_load("blocks_overworld/32.png");
+    blocks[33] = img_load("blocks_overworld/33.png");
+    blocks[34] = img_load("blocks_overworld/34.png");
+    blocks[35] = img_load("blocks_overworld/35.png");
+    blocks[36] = img_load("blocks_overworld/36.png");
+    blocks[37] = img_load("blocks_overworld/37.png");
+    blocks[38] = img_load("blocks_overworld/38.png");
+    blocks[39] = img_load("blocks_overworld/39.png");
+    blocks[40] = img_load("blocks_overworld/40.png");
 }
 
-void drawsprite(const char *filename, int x, int y)
+void draw_background(int type, int x, int y)
 {
-    int width, height;
-    struct nk_image sprite = img_load_size(filename, &width, &height);
-
     struct nk_command_buffer *out = nk_window_get_canvas(context);
-    nk_draw_image(out, nk_rect(x, y, width, height), &sprite, nk_rgba(255, 255, 255, 255));
+    struct nk_image *sprite = &backgrounds[type];
+    nk_draw_image(out, nk_rect(x, y, SPRITE_SIZE, SPRITE_SIZE), sprite, nk_rgba(255, 255, 255, 255));
+}
+
+void draw_block(int type, int x, int y)
+{
+    struct nk_command_buffer *out = nk_window_get_canvas(context);
+    struct nk_image *sprite = &blocks[type];
+    nk_draw_image(out, nk_rect(x, y, SPRITE_SIZE, SPRITE_SIZE), sprite, nk_rgba(255, 255, 255, 255));
+}
+
+void status(int score, int coins, char *world, int time, int lives)
+{
+    nk_layout_row_dynamic(context, 48, 5);
+
+    nk_label(context, "SCORE", NK_TEXT_CENTERED);
+    nk_label(context, "COINS", NK_TEXT_CENTERED);
+    nk_label(context, "WORLD", NK_TEXT_CENTERED);
+    nk_label(context, "TIME", NK_TEXT_CENTERED);
+    nk_label(context, "LIVES", NK_TEXT_CENTERED);
+
+    char *nums = (char *)malloc(BUFSIZ);
+
+    sprintf(nums, "%d", score);
+    nk_label(context, nums, NK_TEXT_CENTERED);
+    sprintf(nums, "%d", coins);
+    nk_label(context, nums, NK_TEXT_CENTERED);
+    nk_label(context, world, NK_TEXT_CENTERED);
+    sprintf(nums, "%d", time);
+    nk_label(context, nums, NK_TEXT_CENTERED);
+    sprintf(nums, "%d", lives);
+    nk_label(context, nums, NK_TEXT_CENTERED);
+
+    free(nums);
 }
 
 void frmdraw(void)
