@@ -130,15 +130,18 @@ bool setBackgroundBlock(Map *map, int x, int y, unsigned char block) // Set the 
 void setEntityDimensions(EntityNode *entity, int type){
     switch(type){
         case PLATFORM:
-            entity->width = 3.0f;
+            entity->width = 1.0f;
             entity->height = 0.5f;
         case HAMMER_BROTHER:
             entity->width = 1.0f;
             entity->height = 2.0f;
         case FIRE_BAR:
-        case HAMMER:
             entity->width = 0.5f;
             entity->height = 0.5f;
+            break;
+        case HAMMER:
+            entity->width = 0.5f;
+            entity->height = 1.0f;
             break;
         case FIREBALL:
             entity->width = 1.5f;

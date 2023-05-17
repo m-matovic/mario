@@ -244,7 +244,8 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
                         else for(char i = y; i < map->height; i++) setMapBlock(map, x, i, AIR);
                         x++;
                         if(x == map->length) index = 9;
-                        y = 0;
+                        if(background) for(char i = 0; i < y; i++) setBackgroundBlock(map, x, i, AIR_BG);
+                        else for(char i = 0; i < y; i++) setMapBlock(map, x, i, AIR);
                         numBuffer = 0;
                     }
                     else selector++;
@@ -258,7 +259,8 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
                     else for(char i = y; i < map->height; i++) setMapBlock(map, x, i, AIR);
                     x++;
                     if(x == map->length) index = 9;
-                    y = 0;
+                    if(background) for(char i = 0; i < y; i++) setBackgroundBlock(map, x, i, AIR_BG);
+                    else for(char i = 0; i < y; i++) setMapBlock(map, x, i, AIR);
                     numBuffer = 0;
                 }
                 else selector++;
@@ -361,8 +363,7 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
 
     while(x < map->length){
         if( (getMapBlock(map, x, y) != AIR && !background) || (getBackgroundBlock(map, x, y) != AIR_BG && background)) {
-            prevX = x;
-            if(prevY >= y){
+            if(prevY < y && prevX != x){
                 outBuffer |= ((heightPattern >> (8-bits)) & map->height) << (8-bits) >> index;
                 index += bits;
                 if(index >= 8) {
@@ -374,6 +375,7 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
                     if(remainder != 0) outBuffer |= ((heightPattern >> (8-bits)) & map->height) << (8 - remainder);
                 }
             }
+            prevX = x;
             prevY = y;
 
             outBuffer |= ((heightPattern >> (8-bits)) & y) << (8-bits) >> index;
@@ -406,7 +408,7 @@ void saveMap(const char *location, bool background, Map *map) // Function used f
 
         if(y == map->height) {
             y = 0;
-            if(prevX < x) {
+            if(prevX != x) {
                 outBuffer |= ((heightPattern >> (8-bits)) & map->height) << (8-bits) >> index;
                 index += bits;
                 if(index >= 8) {
@@ -498,6 +500,39 @@ char printPalletFG(int type) //Temporary function until graphics are added
     return printPallet[type];
 }
 
+char printPalletBG(int type) //Temporary function until graphics are added
+{
+    char printPallet[25];
+    {
+        printPallet[AIR_BG] = ' ';
+        printPallet[BRICK_BG] = '#';
+        printPallet[BRICK_HALF_LEFT] = '[';
+        printPallet[BRICK_HALF_RIGHT] = ']';
+        printPallet[BRICK_ARCH] = 'W';
+        printPallet[BRICK_HOLE] = 'X';
+        printPallet[BRICK_BATTLEMENT_HOLE] = 'M';
+        printPallet[BRICK_BATTLEMENT_FILLED] = 'N';
+        printPallet[CLOUD_TOP_LEFT] = '/';
+        printPallet[CLOUD_TOP] = '-';
+        printPallet[CLOUD_TOP_RIGHT] = '\\';
+        printPallet[CLOUD_BOTTOM_LEFT] = '/';
+        printPallet[CLOUD_BOTTOM] = '_';
+        printPallet[CLOUD_BOTTOM_RIGHT] = '\\';
+        printPallet[HILL_INCLINE] = '/';
+        printPallet[HILL] = '@';
+        printPallet[HILL_DECLINE] = '\\';
+        printPallet[HILL_TOP] = '-';
+        printPallet[HILL_SPOT] = '%';
+        printPallet[BRIDGE_HANDRAIL] = 'H';
+        printPallet[TREE_SMALL] = 'o';
+        printPallet[TREE_TALL_BOTTOM] = 'U';
+        printPallet[TREE_TALL_TOP] = 'O';
+        printPallet[TREE_TRUNK_BG] = 'T';
+        printPallet[FENCE] = 'M';
+    }
+    return printPallet[type];
+}
+
 MapViewport* mapInit(string location){
     int size = 0;
     for(size = 0; size < 16; size++) if(location[size] == 0) break;
@@ -565,7 +600,7 @@ void mapMaker(string location = "") {
                     printf("%c%c%c", printPalletFG(getMapBlock(map, x, y)),
                            printPalletFG(getMapBlock(map, x, y)), printPalletFG(getMapBlock(map, x, y)));
                 else if(getMapBlock(map, x, y == 255)) printf("?");
-                else printf(" %c ", printPalletFG(getBackgroundBlock(map, x, y)));
+                else printf(" %c ", printPalletBG(getBackgroundBlock(map, x, y)));
             printf("%2d", y % 100);
             printf("\n");
         }
@@ -587,6 +622,7 @@ void mapMaker(string location = "") {
                 int x, y, block;
                 scanf("%d %d %d", &x, &y, &block);
                 setBackgroundBlock(map, x, y, block);
+                break;
             }
             case 'f': { // fill
                 char loc;
@@ -598,14 +634,64 @@ void mapMaker(string location = "") {
                         else if (loc == 'b') setBackgroundBlock(map, x, y, block);
                 break;
             }
+            case 'c': { // copy
+                char loc;
+                int x1, y1, x2, y2, x3, y3;
+                scanf(" %c %d %d %d %d %d %d", &loc, &x1, &y1, &x2, &y2, &x3, &y3);
+                for (int x = min(x1, x2); x <= max(x1, x2); x++)
+                    for (int y = min(y1, y2); y <= max(y1, y2); y++) 
+                        if (loc == 'p') setMapBlock(map, x3 + x - min(x1, x2), y3 + y - min(y1, y2), getMapBlock(map, x, y));
+                        else if (loc == 'b') setBackgroundBlock(map, x3 + x - min(x1, x2), y3 + y - min(y1, y2), getBackgroundBlock(map, x, y));
+                break;
+            }
             case 'h': // hide
                 hideFG = !hideFG;
                 break;
-            case 'l':
+            case 'l': //go left
                 if(chunk > 0) chunk--;
                 break;
-            case 'r':
+            case 'r': //go right
                 if(chunk < map->length / CHUNK_LEN) chunk++;
+                break;
+            case 'm': //move
+                char loc;
+                int x1, y1, x2, y2, x3, y3;
+                scanf(" %c %d %d %d %d %d %d", &loc, &x1, &y1, &x2, &y2, &x3, &y3);
+                if(x3 == min(x1, x2) && y3 == min(y1, y2)) break;
+                if(min(x1, x2) < x3){
+                    for (int x = max(x1, x2); x >= min(x1, x2); x--)
+                        for (int y = min(y1, y2); y <= max(y1, y2); y++) 
+                            if (loc == 'p') setMapBlock(map, x3 + x - min(x1, x2), y3 + y - min(y1, y2), getMapBlock(map, x, y));
+                            else if (loc == 'b') setBackgroundBlock(map, x3 + x - min(x1, x2), y3 + y - min(y1, y2), getBackgroundBlock(map, x, y));
+
+                    if(max(x1, x2) > x3)
+                        for (int x = min(x1, x2); x < x3; x++)
+                            for (int y = min(y1, y2); y <= max(y1, y2); y++) 
+                                if (loc == 'p') setMapBlock(map, x, y, AIR);
+                                else if (loc == 'b') setBackgroundBlock(map, x, y, AIR_BG);
+                    else 
+                        for (int x = min(x1, x2); x < max(x1, x2); x++)
+                            for (int y = min(y1, y2); y <= max(y1, y2); y++) 
+                                if (loc == 'p') setMapBlock(map, x, y, AIR);
+                                else if (loc == 'b') setBackgroundBlock(map, x, y, AIR_BG);
+                }
+                else {
+                    for (int x = min(x1, x2); x <= max(x1, x2); x++)
+                        for (int y = min(y1, y2); y <= max(y1, y2); y++) 
+                            if (loc == 'p') setMapBlock(map, x3 + x - min(x1, x2), y3 + y - min(y1, y2), getMapBlock(map, x, y));
+                            else if (loc == 'b') setBackgroundBlock(map, x3 + x - min(x1, x2), y3 + y - min(y1, y2), getBackgroundBlock(map, x, y));
+
+                    if(x3 + max(x1, x2) - min(x1, x2) > min(x1, x2))
+                        for (int x = x3 + max(x1, x2) - min(x1, x2); x < max(x1, x2); x++)
+                            for (int y = min(y1, y2); y <= max(y1, y2); y++) 
+                                if (loc == 'p') setMapBlock(map, x, y, AIR);
+                                else if (loc == 'b') setBackgroundBlock(map, x, y, AIR_BG);
+                    else 
+                        for (int x = min(x1, x2); x < max(x1, x2); x++)
+                            for (int y = min(y1, y2); y <= max(y1, y2); y++) 
+                                if (loc == 'p') setMapBlock(map, x, y, AIR);
+                                else if (loc == 'b') setBackgroundBlock(map, x, y, AIR_BG);
+                }
                 break;
             case 'e': { // end
                 char endIndex = 0;
@@ -628,6 +714,8 @@ void mapMaker(string location = "") {
                 return;
             }
             case 'q': // Quit without saving
+                free(map->map);
+                free(map->background);
                 free(fileName);
                 return;
         }
@@ -639,7 +727,9 @@ void printMap(MapViewport *map, int blocksPerLine){
     int x = 0;
     while(x < map->map->length){
         for(int y = 0; y < map->map->height; y++){
-            for(int i = x; i < min(x+blocksPerLine, (int) map->map->length); i++) cout << printPalletFG(getMapBlock(map->map, i, y));
+            for(int i = x; i < min(x+blocksPerLine, (int) map->map->length); i++) 
+                if(getMapBlock(map->map, i, y) != AIR) cout << printPalletFG(getMapBlock(map->map, i, y));
+                else cout << printPalletBG(getBackgroundBlock(map->map, i, y));
             cout << endl;
         }
         x += blocksPerLine;
