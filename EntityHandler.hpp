@@ -111,6 +111,10 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
 }
 
 void entityFall(EntityNode *entity, MapViewport *map){
+    int floatingEntities[] = {PIRANHA_PLANT, FIRE_BAR, HAMMER, FIREBALL};
+    for(int i = 0; i < sizeof(floatingEntities)/sizeof(floatingEntities[0]); i++)
+        if(floatingEntities[i] == entity->type) return;
+
     if(entity->velY > TERMINAL_VELOCITY) {
         entity->velY = TERMINAL_VELOCITY;
         entity->accY = 0;
@@ -271,7 +275,7 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         else if(itr->type == FIRE_BAR) fireballAI(itr, timeDelta);
         else if(itr->type == BOWSER) bowserAI(itr, mario, timeDelta, map);
         else if(itr->type != MARIO) smartAI(itr, mario, map, timeDelta);       
-        if(itr->velY < 0) entityFall(itr, map);
+        if(!itr->isOnGround) entityFall(itr, map);
         itr->next;
     }
 
