@@ -264,6 +264,13 @@ void projectileAI(EntityNode *entity, MapViewport *map, float timeDelta){
     if(timer->timer <= 0) removeAliveEntity(entity, map);
 }
 
+void platformAI(EntityNode *entity, MapViewport *map){
+    if(entity->velY != 0) {
+        if(entity->y < 0) entity->y = map->map->height - 1;
+        else if(entity->y >= map->map->height) entity->y = 0;
+    }
+}
+
 void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
     EntityNode *itr = map->map->entityList;
     while(itr != nullptr){
@@ -274,6 +281,7 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         else if(itr->type == HAMMER || itr->type == FIREBALL) projectileAI(itr, map, timeDelta);
         else if(itr->type == FIRE_BAR) fireballAI(itr, timeDelta);
         else if(itr->type == BOWSER) bowserAI(itr, mario, timeDelta, map);
+        else if(itr->type == PLATFORM) platformAI(itr, map);
         else if(itr->type != MARIO) smartAI(itr, mario, map, timeDelta);       
         if(!itr->isOnGround) entityFall(itr, map);
         itr->next;

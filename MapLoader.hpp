@@ -280,6 +280,29 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
             }
             if(background) {
                 for (; y < yPos; y++) setBackgroundBlock(map, x, y, AIR_BG);
+                if(block == DIRECTION) {
+                    block = AIR_BG;
+                    EntityNode *itr = map->entityList;
+                    while(itr != nullptr){
+                        if(round(itr->x) - 1 == x && round(itr->y) == y) {
+                            itr->velX = -ENTITY_SPEED;
+                            break;
+                        }
+                        else if(round(itr->x) + 1 == x && round(itr->y) == y){
+                            itr->velX = ENTITY_SPEED;
+                            break;
+                        }
+                        else if(round(itr->x) == x && round(itr->y) + 1 == y){
+                            itr->velY = ENTITY_SPEED;
+                            break;
+                        }
+                        else if(round(itr->x) == x && round(itr->y) - 1 == y){
+                            itr->velY = -ENTITY_SPEED;
+                            break;
+                        }
+                        itr = itr->next;
+                    }
+                }
                 setBackgroundBlock(map, x, y, block);
             }
             else {
@@ -529,6 +552,7 @@ char printPalletBG(int type) //Temporary function until graphics are added
         printPallet[TREE_TALL_TOP] = 'O';
         printPallet[TREE_TRUNK_BG] = 'T';
         printPallet[FENCE] = 'M';
+        printPallet[DIRECTION] = '<';
     }
     return printPallet[type];
 }
