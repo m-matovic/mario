@@ -10,9 +10,9 @@ static int lives = 3;
 
 int main(void)
 {
-    glfwinit("test");
+    glfwinit("mario");
     MapViewport *map = mapInit("demoMap");
-    printMap(map, 50);
+    /* printMap(map, 50); */
 
     int showmenu = 1;
     while(showmenu)
@@ -23,10 +23,13 @@ int main(void)
         frmdraw();
     }
     
+    bg_color(97, 133, 248);
     load_backgrounds();
     load_blocks();
+
     time_t level_start, current_time;
     time(&level_start);
+
     while(!shouldEnd())
     {
         frminit();
@@ -37,6 +40,7 @@ int main(void)
 
         time(&current_time);
         status(score, coins, "1 # 1", 300 - (current_time - level_start), lives);
+
         frmdraw();
     }
 

@@ -18,6 +18,10 @@
 #define WINDOW_WIDTH 1280
 #define SPRITE_SIZE 48
 
+#define BACKGROUNDS_NUMBER 25
+#define BLOCKS_NUMBER 41
+#define ENTITIES_NUMBER 50
+
 #include "nuklear.h"
 #include "nuklear_glfw_gl3.h"
 
@@ -28,9 +32,10 @@
 
 GLFWwindow *window;
 struct nk_glfw glfw = {0};
-struct nk_context *context;
-struct nk_image backgrounds[25];
-struct nk_image blocks[41];
+/* struct nk_context *context; */
+struct nk_image backgrounds[BACKGROUNDS_NUMBER];
+struct nk_image blocks[BLOCKS_NUMBER];
+struct nk_image entities[ENTITIES_NUMBER];
 
 static void error_callback(int e, const char *d)
 {
@@ -66,19 +71,21 @@ void glfwinit(const char *wintag)
         exit(1);
     }
 
-    context = nk_glfw3_init(&glfw, window, NK_GLFW3_INSTALL_CALLBACKS);
+    glfw.ctx = *(nk_glfw3_init(&glfw, window, NK_GLFW3_INSTALL_CALLBACKS));
 
     struct nk_font_atlas *atlas;
     nk_glfw3_font_stash_begin(&glfw, &atlas);
     struct nk_font *super_mario_font = nk_font_atlas_add_from_file(atlas, "super_mario_font.ttf", 32, NULL);
     nk_glfw3_font_stash_end(&glfw);
-    nk_init_default(context, &super_mario_font->handle);
+    nk_init_default(&glfw.ctx, &super_mario_font->handle);
 
-    context->style.button.border_color = nk_rgba(0, 0, 0, 0);
-    context->style.button.text_background = nk_rgba(0, 0, 0, 0);
-    context->style.button.normal = nk_style_item_color(nk_rgba(0, 0, 0, 0));
-    context->style.button.hover = nk_style_item_color(nk_rgba(0, 0, 0, 0));
-    context->style.button.active = nk_style_item_color(nk_rgba(0, 0, 0, 0));
+    glfw.ctx.style.button.border_color = nk_rgba(0, 0, 0, 0);
+    glfw.ctx.style.button.text_background = nk_rgba(0, 0, 0, 0);
+    glfw.ctx.style.button.normal = nk_style_item_color(nk_rgba(0, 0, 0, 0));
+    glfw.ctx.style.button.hover = nk_style_item_color(nk_rgba(0, 0, 0, 0));
+    glfw.ctx.style.button.active = nk_style_item_color(nk_rgba(0, 0, 0, 0));
+    glfw.ctx.style.window.spacing = nk_vec2(0, 0);
+    glfw.ctx.style.window.padding = nk_vec2(0, 0);
 }
 
 int shouldEnd(void)
@@ -91,20 +98,21 @@ void frminit(void)
     glfwPollEvents();
     nk_glfw3_new_frame(&glfw);
 
-    nk_begin(context, "game", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0);
+    nk_begin(&glfw.ctx, "game", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), 0);
 }
 
 int menu(void)
 {
-    nk_layout_row_dynamic(context, 200, 1);
+    nk_layout_row_dynamic(&glfw.ctx, 200, 1);
 
-    nk_layout_row_dynamic(context, 80, 1);
-    if(nk_button_label(context, "Play"))
+    nk_layout_row_dynamic(&glfw.ctx, 80, 1);
+    if(nk_button_label(&glfw.ctx, "Play"))
         return 0;
 
-    nk_layout_row_dynamic(context, 80, 1);
-    if(nk_button_label(context, "Quit"))
+    nk_layout_row_dynamic(&glfw.ctx, 80, 1);
+    if(nk_button_label(&glfw.ctx, "Quit"))
     {
+        nk_end(&glfw.ctx);
         glfwend();
         exit(0);
     }
@@ -136,146 +144,99 @@ static struct nk_image img_load(const char *filename)
     return nk_image_id((int)texture);
 }
 
-static struct nk_image img_load_size(const char *filename, int *x, int *y)
-{
-    int n;
-    GLuint texture;
-    unsigned char *data = stbi_load(filename, x, y, &n, 4);
-    if(!data)
-    {
-        printf("[SDL} failed to load image from file %s\n", filename);
-        exit(0);
-    }
-
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR_MIPMAP_NEAREST);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, *x, *y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
-    stbi_image_free(data);
-
-    return nk_image_id((int)texture);
-}
-
 void load_backgrounds(void)
 {
-    backgrounds[0] = img_load("background_overworld/0.png");
-    backgrounds[1] = img_load("background_overworld/1.png");
-    backgrounds[2] = img_load("background_overworld/2.png");
-    backgrounds[3] = img_load("background_overworld/3.png");
-    backgrounds[4] = img_load("background_overworld/4.png");
-    backgrounds[5] = img_load("background_overworld/5.png");
-    backgrounds[6] = img_load("background_overworld/6.png");
-    backgrounds[7] = img_load("background_overworld/7.png");
-    backgrounds[8] = img_load("background_overworld/8.png");
-    backgrounds[9] = img_load("background_overworld/9.png");
-    backgrounds[10] = img_load("background_overworld/10.png");
-    backgrounds[11] = img_load("background_overworld/11.png");
-    backgrounds[12] = img_load("background_overworld/12.png");
-    backgrounds[13] = img_load("background_overworld/13.png");
-    backgrounds[14] = img_load("background_overworld/14.png");
-    backgrounds[15] = img_load("background_overworld/15.png");
-    backgrounds[16] = img_load("background_overworld/16.png");
-    backgrounds[17] = img_load("background_overworld/17.png");
-    backgrounds[18] = img_load("background_overworld/18.png");
-    backgrounds[19] = img_load("background_overworld/19.png");
-    backgrounds[20] = img_load("background_overworld/20.png");
-    backgrounds[21] = img_load("background_overworld/21.png");
-    backgrounds[22] = img_load("background_overworld/22.png");
-    backgrounds[23] = img_load("background_overworld/23.png");
-    backgrounds[24] = img_load("background_overworld/24.png");
+    char *filename = (char *)malloc(BUFSIZ);
+
+    for(int i = 0; i < BACKGROUNDS_NUMBER; i++)
+    {
+        sprintf(filename, "background_overworld/%d.png", i);
+        backgrounds[i] = img_load(filename);
+    }
+
+    free(filename);
 }
 
 void load_blocks(void)
 {
-    blocks[0] = img_load("blocks_overworld/0.png");
-    blocks[1] = img_load("blocks_overworld/1.png");
-    blocks[2] = img_load("blocks_overworld/2.png");
-    blocks[3] = img_load("blocks_overworld/3.png");
-    blocks[4] = img_load("blocks_overworld/4.png");
-    blocks[5] = img_load("blocks_overworld/5.png");
-    blocks[6] = img_load("blocks_overworld/6.png");
-    blocks[7] = img_load("blocks_overworld/7.png");
-    blocks[8] = img_load("blocks_overworld/8.png");
-    blocks[9] = img_load("blocks_overworld/9.png");
-    blocks[10] = img_load("blocks_overworld/10.png");
-    blocks[11] = img_load("blocks_overworld/11.png");
-    blocks[12] = img_load("blocks_overworld/12.png");
-    blocks[13] = img_load("blocks_overworld/13.png");
-    blocks[14] = img_load("blocks_overworld/14.png");
-    blocks[15] = img_load("blocks_overworld/15.png");
-    blocks[16] = img_load("blocks_overworld/16.png");
-    blocks[17] = img_load("blocks_overworld/17.png");
-    blocks[18] = img_load("blocks_overworld/18.png");
-    blocks[19] = img_load("blocks_overworld/19.png");
-    blocks[20] = img_load("blocks_overworld/20.png");
-    blocks[21] = img_load("blocks_overworld/21.png");
-    blocks[22] = img_load("blocks_overworld/22.png");
-    blocks[23] = img_load("blocks_overworld/23.png");
-    blocks[24] = img_load("blocks_overworld/24.png");
-    blocks[25] = img_load("blocks_overworld/25.png");
-    blocks[26] = img_load("blocks_overworld/26.png");
-    blocks[27] = img_load("blocks_overworld/27.png");
-    blocks[28] = img_load("blocks_overworld/28.png");
-    blocks[29] = img_load("blocks_overworld/29.png");
-    blocks[30] = img_load("blocks_overworld/30.png");
-    blocks[31] = img_load("blocks_overworld/31.png");
-    blocks[32] = img_load("blocks_overworld/32.png");
-    blocks[33] = img_load("blocks_overworld/33.png");
-    blocks[34] = img_load("blocks_overworld/34.png");
-    blocks[35] = img_load("blocks_overworld/35.png");
-    blocks[36] = img_load("blocks_overworld/36.png");
-    blocks[37] = img_load("blocks_overworld/37.png");
-    blocks[38] = img_load("blocks_overworld/38.png");
-    blocks[39] = img_load("blocks_overworld/39.png");
-    blocks[40] = img_load("blocks_overworld/40.png");
+    char *filename = (char *)malloc(BUFSIZ);
+
+    for(int i = 0; i < BLOCKS_NUMBER; i++)
+    {
+        sprintf(filename, "blocks_overworld/%d.png", i);
+        blocks[i] = img_load(filename);
+    }
+
+    free(filename);
+}
+
+void load_entities(void)
+{
+    char *filename = (char *)malloc(BUFSIZ);
+
+    for(int i = 0; i < ENTITIES_NUMBER; i++)
+    {
+        sprintf(filename, "entities/%d.png", i);
+        entities[i] = img_load(filename);
+    }
+
+    free(filename);
+}
+
+void bg_color(int r, int g, int b)
+{
+    glfw.ctx.style.window.fixed_background = nk_style_item_color(nk_rgba(r, g, b, 255));
 }
 
 void draw_background(int type, int x, int y)
 {
-    struct nk_command_buffer *out = nk_window_get_canvas(context);
+    struct nk_command_buffer *out = nk_window_get_canvas(&glfw.ctx);
     struct nk_image *sprite = &backgrounds[type];
     nk_draw_image(out, nk_rect(x, y, SPRITE_SIZE, SPRITE_SIZE), sprite, nk_rgba(255, 255, 255, 255));
 }
 
 void draw_block(int type, int x, int y)
 {
-    struct nk_command_buffer *out = nk_window_get_canvas(context);
+    struct nk_command_buffer *out = nk_window_get_canvas(&glfw.ctx);
     struct nk_image *sprite = &blocks[type];
+    nk_draw_image(out, nk_rect(x, y, SPRITE_SIZE, SPRITE_SIZE), sprite, nk_rgba(255, 255, 255, 255));
+}
+
+void draw_entity(int type, int x, int y)
+{
+    struct nk_command_buffer *out = nk_window_get_canvas(&glfw.ctx);
+    struct nk_image *sprite = &entities[type];
     nk_draw_image(out, nk_rect(x, y, SPRITE_SIZE, SPRITE_SIZE), sprite, nk_rgba(255, 255, 255, 255));
 }
 
 void status(int score, int coins, char *world, int time, int lives)
 {
-    nk_layout_row_dynamic(context, 48, 5);
+    nk_layout_row_dynamic(&glfw.ctx, 48, 5);
 
-    nk_label(context, "SCORE", NK_TEXT_CENTERED);
-    nk_label(context, "COINS", NK_TEXT_CENTERED);
-    nk_label(context, "WORLD", NK_TEXT_CENTERED);
-    nk_label(context, "TIME", NK_TEXT_CENTERED);
-    nk_label(context, "LIVES", NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, "SCORE", NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, "COINS", NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, "WORLD", NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, "TIME", NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, "LIVES", NK_TEXT_CENTERED);
 
     char *nums = (char *)malloc(BUFSIZ);
 
     sprintf(nums, "%d", score);
-    nk_label(context, nums, NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, nums, NK_TEXT_CENTERED);
     sprintf(nums, "%d", coins);
-    nk_label(context, nums, NK_TEXT_CENTERED);
-    nk_label(context, world, NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, nums, NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, world, NK_TEXT_CENTERED);
     sprintf(nums, "%d", time);
-    nk_label(context, nums, NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, nums, NK_TEXT_CENTERED);
     sprintf(nums, "%d", lives);
-    nk_label(context, nums, NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, nums, NK_TEXT_CENTERED);
 
     free(nums);
 }
 
 void frmdraw(void)
 {
-    nk_end(context);
+    nk_end(&glfw.ctx);
 
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
     glClear(GL_COLOR_BUFFER_BIT);
