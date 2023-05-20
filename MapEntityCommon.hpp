@@ -22,7 +22,8 @@ enum Blocks {
 enum Background {
     AIR_BG, BRICK_BG, BRICK_HALF_LEFT, BRICK_HALF_RIGHT, BRICK_ARCH, BRICK_HOLE, BRICK_BATTLEMENT_HOLE, BRICK_BATTLEMENT_FILLED,
     CLOUD_TOP_LEFT, CLOUD_TOP, CLOUD_TOP_RIGHT, CLOUD_BOTTOM_LEFT, CLOUD_BOTTOM, CLOUD_BOTTOM_RIGHT, HILL_INCLINE, HILL,
-    HILL_DECLINE, HILL_TOP, HILL_SPOT, BRIDGE_HANDRAIL, TREE_SMALL, TREE_TALL_BOTTOM, TREE_TALL_TOP, TREE_TRUNK_BG, FENCE
+    HILL_DECLINE, HILL_TOP, HILL_SPOT, BRIDGE_HANDRAIL, TREE_SMALL, TREE_TALL_BOTTOM, TREE_TALL_TOP, TREE_TRUNK_BG, FENCE, DIRECTION, 
+    PEACH_BOTTOM, PEACH_TOP
 };
 
 enum FilledBlocks {
@@ -166,9 +167,10 @@ void setEntityDimensions(EntityNode *entity, int type){
 }
 
 void setEntityStartingVelocity(EntityNode *entity, Map *map) {
-    entity->velX = ENTITY_SPEED;
+    entity->velX = -ENTITY_SPEED;
     entity->accX = 0;
     entity->velY = 0;
+    if(entity->type == PLATFORM) entity->velX = 0;
     if(getMapBlock(map, floor(entity->x), floor(entity->y) + 1) != AIR){
         entity->isOnGround = false;
         entity->accY = GRAVITY_ACCELERATION;

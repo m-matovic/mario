@@ -111,35 +111,35 @@ void shiftLeft(MapViewport* viewport) // Shift a viewport by one block to the le
     viewport->x--;
     viewport->front--;
     if(viewport->front < 0) viewport->front = VIEWPORT_WIDTH-1;
-    for(int y = viewport->yFront; y < VIEWPORT_HEIGHT + viewport->yFront; y++)
-        viewport->viewport[y][viewport->front] = getBlock(getMapBlock(viewport->map, viewport->x, y));
+    for(int y = viewport->y; y < VIEWPORT_HEIGHT + viewport->y; y++)
+        viewport->viewport[(viewport->yFront + y) % VIEWPORT_HEIGHT][viewport->front] = getBlock(getMapBlock(viewport->map, viewport->x, viewport->y + y));
 }
 
 void shiftRight(MapViewport* viewport) // Shift a viewport by one block to the right
 {
-    if(viewport->x >= viewport->map->length) return;
-    for(int y = viewport->yFront; y < VIEWPORT_HEIGHT + viewport->yFront; y++)
-        viewport->viewport[y][viewport->front] = getBlock(getMapBlock(viewport->map, viewport->x + VIEWPORT_WIDTH, y));
+    if(viewport->x + VIEWPORT_WIDTH >= viewport->map->length) return;
+    for(int y = 0; y < VIEWPORT_HEIGHT; y++)
+        viewport->viewport[(viewport->yFront + y) % VIEWPORT_HEIGHT][viewport->front] = getBlock(getMapBlock(viewport->map, viewport->x + VIEWPORT_WIDTH, viewport->y + y));
     viewport->x++;
     viewport->front++;
     if(viewport->front >= VIEWPORT_WIDTH) viewport->front = 0;
 }
 
-void shiftDown(MapViewport* viewport) // Shift a viewport by one block downwards
+void shiftUp(MapViewport* viewport) // Shift a viewport by one block upwards
 {
     if(viewport->y <= 0) return;
     viewport->y--;
     viewport->yFront--;
     if(viewport->yFront < 0) viewport->yFront = VIEWPORT_HEIGHT-1;
-    for(int x = viewport->front; x < VIEWPORT_WIDTH + viewport->front; x++)
-        viewport->viewport[viewport->yFront][x] = getBlock(getMapBlock(viewport->map, x, viewport->y));
+    for(int x = 0; x < VIEWPORT_WIDTH; x++)
+        viewport->viewport[viewport->yFront][(viewport->front + x) % VIEWPORT_WIDTH] = getBlock(getMapBlock(viewport->map, viewport->x + x, viewport->y));
 }
 
-void shiftUp(MapViewport* viewport) // Shift a viewport by one block upwards
+void shiftDown(MapViewport* viewport) // Shift a viewport by one block downwards
 {
-    if(viewport->y <= 0) return;
-    for(int x = viewport->front; x < VIEWPORT_WIDTH + viewport->front; x++)
-        viewport->viewport[viewport->yFront][x] = getBlock(getMapBlock(viewport->map, x, viewport->y+VIEWPORT_HEIGHT));
+    if(viewport->y + VIEWPORT_HEIGHT >= viewport->map->height) return;
+    for(int x = 0; x < VIEWPORT_WIDTH; x++)
+        viewport->viewport[viewport->yFront][(viewport->front + x) % VIEWPORT_WIDTH] = getBlock(getMapBlock(viewport->map, viewport->x + x, viewport->y+VIEWPORT_HEIGHT));
     viewport->y++;
     viewport->yFront++;
     if(viewport->yFront >= VIEWPORT_HEIGHT) viewport->yFront = 0;
@@ -172,14 +172,14 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
             else if(map->height < VIEWPORT_HEIGHT) throw length_error("Minimal map height not met!");
         }
         else map->height = MAP_HEIGHT;
-        map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN)));
+        map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
         for(int i = 0; i < map->length / CHUNK_LEN; i++)
             map->map[i] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
         if (map->length % CHUNK_LEN > 0)
             map->map[map->length/CHUNK_LEN] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * (map->length%CHUNK_LEN)));
     }
     else {
-        map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN)));
+        map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
         for(int i = 0; i < map->length / CHUNK_LEN; i++)
             map->background[i] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
         if (map->length % CHUNK_LEN > 0)
@@ -280,6 +280,29 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
             }
             if(background) {
                 for (; y < yPos; y++) setBackgroundBlock(map, x, y, AIR_BG);
+                if(block == DIRECTION) {
+                    block = AIR_BG;
+                    EntityNode *itr = map->entityList;
+                    while(itr != nullptr){
+                        if(round(itr->x) - 1 == x && round(itr->y) == y) {
+                            itr->velX = -ENTITY_SPEED;
+                            break;
+                        }
+                        else if(round(itr->x) + 1 == x && round(itr->y) == y){
+                            itr->velX = ENTITY_SPEED;
+                            break;
+                        }
+                        else if(round(itr->x) == x && round(itr->y) + 1 == y){
+                            itr->velY = ENTITY_SPEED;
+                            break;
+                        }
+                        else if(round(itr->x) == x && round(itr->y) - 1 == y){
+                            itr->velY = -ENTITY_SPEED;
+                            break;
+                        }
+                        itr = itr->next;
+                    }
+                }
                 setBackgroundBlock(map, x, y, block);
             }
             else {
@@ -292,10 +315,10 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
                     else if(block == CHEEP_CHEEP_BLOCK || block == BLOOBER_BLOCK) block = WATER;
                     else block = AIR;
                 }
-                if(block == BOWSER_BRIDGE && y > map->height - 1 && getMapBlock(map, x, y+1) == BOWSER_BRIDGE) {
+                if(block == BOWSER_BRIDGE && y > 0 && getMapBlock(map, x, y-1) == BOWSER_BRIDGE) {
                     if(map->entityList == nullptr) map->entityList = getEntity(PIRANHA_PLANT + BOWSER, x, y, map);
                     else getEntity(PIRANHA_PLANT + BOWSER, x, y, map);
-                    block = AIR;
+                    setMapBlock(map, x, y-1, AIR);
                 }
                 setMapBlock(map, x, y, block);
             }
@@ -529,6 +552,9 @@ char printPalletBG(int type) //Temporary function until graphics are added
         printPallet[TREE_TALL_TOP] = 'O';
         printPallet[TREE_TRUNK_BG] = 'T';
         printPallet[FENCE] = 'M';
+        printPallet[DIRECTION] = '<';
+        printPallet[PEACH_BOTTOM] = '|';
+        printPallet[PEACH_TOP] = 'o';
     }
     return printPallet[type];
 }
