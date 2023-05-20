@@ -14,8 +14,6 @@ int main(void)
     MapViewport *map = mapInit("demoMap");
     /* printMap(map, 50); */
 
-    load_entities();
-
     int showmenu = 1;
     while(showmenu)
     {
