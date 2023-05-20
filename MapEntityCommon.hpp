@@ -170,7 +170,7 @@ void setEntityStartingVelocity(EntityNode *entity, Map *map) {
     entity->velX = -ENTITY_SPEED;
     entity->accX = 0;
     entity->velY = 0;
-    if(entity->type == PLATFORM) entity->velX = 0;
+    if(entity->type == PLATFORM || entity->type == PIRANHA_PLANT || entity->type == FIRE_BAR) entity->velX = 0;
     if(getMapBlock(map, floor(entity->x), floor(entity->y) + 1) != AIR){
         entity->isOnGround = false;
         entity->accY = GRAVITY_ACCELERATION;
