@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <GL/glew.h>
+#include <time.h>
 
 #define MAX_VERTEX_BUFFER 512 * 1024
 #define MAX_ELEMENT_BUFFER 128 * 1024
@@ -20,7 +21,7 @@
 
 #define BACKGROUNDS_NUMBER 25
 #define BLOCKS_NUMBER 41
-#define ENTITIES_NUMBER 40
+#define ENTITIES_NUMBER 42
 
 #include "nuklear.h"
 #include "nuklear_glfw_gl3.h"
@@ -38,6 +39,8 @@ struct nk_image blocks[BLOCKS_NUMBER];
 struct nk_image entities[ENTITIES_NUMBER];
 int entity_widths[ENTITIES_NUMBER];
 int entity_heights[ENTITIES_NUMBER];
+
+struct timespec time_of_frame;
 
 static void error_callback(int e, const char *d)
 {
@@ -97,6 +100,8 @@ int shouldEnd(void)
 
 void frminit(void)
 {
+    clock_gettime(CLOCK_REALTIME, &time_of_frame);
+
     glfwPollEvents();
     nk_glfw3_new_frame(&glfw);
 
@@ -231,7 +236,8 @@ void draw_block(int type, int x, int y)
 void draw_entity(int type, int x, int y)
 {
     struct nk_command_buffer *out = nk_window_get_canvas(&glfw.ctx);
-    struct nk_image *sprite = &entities[type*2];
+    struct nk_image *sprite = &entities[type*2 + (time_of_frame.tv_nsec/125000000 % 2)];
+    /* struct nk_image *sprite = &entities[type*2 + (time_of_frame.tv_nsec/250000000 % 4 == 3)]; */
     nk_draw_image(out, nk_rect(x, y, entity_widths[type*2], entity_heights[type*2]), sprite, nk_rgba(255, 255, 255, 255));
 }
 

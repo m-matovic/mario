@@ -41,6 +41,10 @@ int main(void)
         draw_background(21, 1200, 100);
         draw_block(36, 1200, 100);
         draw_entity(PIRANHA_PLANT, 500, 500);
+        draw_entity(BOWSER, 600, 500);
+        draw_entity(GOOMBA, 700, 500);
+        draw_entity(20, 800, 500);
+        draw_entity(KOOPA_TROOPA, 900, 500);
 
         time(&current_time);
         status(score, coins, "1 # 1", 300 - (current_time - level_start), lives);
