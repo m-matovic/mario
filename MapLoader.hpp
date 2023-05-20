@@ -172,14 +172,14 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
             else if(map->height < VIEWPORT_HEIGHT) throw length_error("Minimal map height not met!");
         }
         else map->height = MAP_HEIGHT;
-        map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN)));
+        map->map = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
         for(int i = 0; i < map->length / CHUNK_LEN; i++)
             map->map[i] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
         if (map->length % CHUNK_LEN > 0)
             map->map[map->length/CHUNK_LEN] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * (map->length%CHUNK_LEN)));
     }
     else {
-        map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN)));
+        map->background = static_cast<unsigned char **> (malloc(sizeof(unsigned char*) * (map->length/CHUNK_LEN + (map->length % CHUNK_LEN > 0 ? 1 : 0))));
         for(int i = 0; i < map->length / CHUNK_LEN; i++)
             map->background[i] = static_cast<unsigned char*> (malloc(sizeof(unsigned char) * map->height * CHUNK_LEN));
         if (map->length % CHUNK_LEN > 0)
@@ -315,10 +315,10 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
                     else if(block == CHEEP_CHEEP_BLOCK || block == BLOOBER_BLOCK) block = WATER;
                     else block = AIR;
                 }
-                if(block == BOWSER_BRIDGE && y > map->height - 1 && getMapBlock(map, x, y+1) == BOWSER_BRIDGE) {
+                if(block == BOWSER_BRIDGE && y > 0 && getMapBlock(map, x, y-1) == BOWSER_BRIDGE) {
                     if(map->entityList == nullptr) map->entityList = getEntity(PIRANHA_PLANT + BOWSER, x, y, map);
                     else getEntity(PIRANHA_PLANT + BOWSER, x, y, map);
-                    block = AIR;
+                    setMapBlock(map, x, y-1, AIR);
                 }
                 setMapBlock(map, x, y, block);
             }
@@ -553,6 +553,8 @@ char printPalletBG(int type) //Temporary function until graphics are added
         printPallet[TREE_TRUNK_BG] = 'T';
         printPallet[FENCE] = 'M';
         printPallet[DIRECTION] = '<';
+        printPallet[PEACH_BOTTOM] = '|';
+        printPallet[PEACH_TOP] = 'o';
     }
     return printPallet[type];
 }
