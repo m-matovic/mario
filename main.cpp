@@ -11,8 +11,6 @@ static int lives = 3;
 int main(void)
 {
     glfwinit("mario");
-    MapViewport *map = mapInit("demoMap");
-    /* printMap(map, 50); */
 
     int showmenu = 1;
     while(showmenu)

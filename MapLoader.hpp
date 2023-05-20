@@ -15,7 +15,7 @@ using namespace std;
 #define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
-#define VIEWPORT_WIDTH 20
+#define VIEWPORT_WIDTH 30
 #define VIEWPORT_HEIGHT 15
 
 
@@ -145,8 +145,8 @@ void shiftDown(MapViewport* viewport) // Shift a viewport by one block downwards
     if(viewport->yFront >= VIEWPORT_HEIGHT) viewport->yFront = 0;
 }
 
-Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
-    FILE* mapFile = fopen(location, "rb");
+Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
+    FILE* mapFile = fopen(location.c_str(), "rb");
     unsigned short numBuffer = 0; // Stores information on the y position and the type of block
     unsigned char temp = 0; // Used to load map length and possibly width
 
@@ -340,9 +340,9 @@ Map* loadMap(const char *location, bool background, Map* loadedMap = nullptr){
     return map;
 }
 
-void saveMap(const char *location, bool background, Map *map) // Function used for making maps
+void saveMap(string location, bool background, Map *map) // Function used for making maps
 {
-    FILE *mapFile = fopen(location, "wb");
+    FILE *mapFile = fopen(location.c_str(), "wb");
     unsigned char outBuffer = 0;
 
     if(!background) {
@@ -563,7 +563,7 @@ MapViewport* mapInit(string location){
     int size = 0;
     for(size = 0; size < 16; size++) if(location[size] == 0) break;
     location += ".map";
-    Map *map = loadMap(location.c_str(), false);
+    Map *map = loadMap(location, false);
 
     location.replace(location.length()-3, 3, "bg");
     loadMap(location.c_str(), true, map);
@@ -573,10 +573,9 @@ MapViewport* mapInit(string location){
 
 void mapMaker(string location = "") {
     Map *map;
-    char *fileName = static_cast<char *>(malloc(20 * sizeof(char)));
     if(location.empty()){
         printf("File name:\n");
-        scanf("%15s", fileName);
+        cin >> location;
         int length, height;
         printf("Map length and height:\n");
         scanf("%d %d", &length, &height);
@@ -607,7 +606,6 @@ void mapMaker(string location = "") {
     else {
         MapViewport *viewport = mapInit(location);
         map = viewport->map;
-        strcpy(fileName, location.c_str());
     }
 
     bool hideFG = false;
@@ -720,29 +718,19 @@ void mapMaker(string location = "") {
                 }
                 break;
             case 'e': { // end
-                char endIndex = 0;
-                for (endIndex; endIndex < 15; endIndex++) if (fileName[endIndex] == 0) break;
-                fileName[endIndex] = '.';
-                fileName[endIndex + 1] = 'm';
-                fileName[endIndex + 2] = 'a';
-                fileName[endIndex + 3] = 'p';
-                fileName[endIndex + 4] = 0;
-                saveMap(fileName, false, map);
+                location += ".map";
+                saveMap(location, false, map);
 
-                fileName[endIndex + 1] = 'b';
-                fileName[endIndex + 2] = 'g';
-                fileName[endIndex + 3] = 0;
-                saveMap(fileName, true, map);
+                location.replace(location.length() - 3, 3, "bg");
+                saveMap(location, true, map);
 
                 free(map->map);
                 free(map->background);
-                free(fileName);
                 return;
             }
             case 'q': // Quit without saving
                 free(map->map);
                 free(map->background);
-                free(fileName);
                 return;
         }
         fflush(stdin);
