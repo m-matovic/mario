@@ -14,6 +14,8 @@ int main(void)
     MapViewport *map = mapInit("demoMap");
     /* printMap(map, 50); */
 
+    load_entities();
+
     int showmenu = 1;
     while(showmenu)
     {
@@ -26,6 +28,7 @@ int main(void)
     bg_color(97, 133, 248);
     load_backgrounds();
     load_blocks();
+    load_entities();
 
     time_t level_start, current_time;
     time(&level_start);
@@ -37,6 +40,7 @@ int main(void)
         /* Sprite drawing test */
         draw_background(21, 1200, 100);
         draw_block(36, 1200, 100);
+        draw_entity(PIRANHA_PLANT, 500, 500);
 
         time(&current_time);
         status(score, coins, "1 # 1", 300 - (current_time - level_start), lives);
