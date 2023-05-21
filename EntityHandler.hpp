@@ -52,6 +52,7 @@ void clearEntityList(MapViewport *map){
         next = next->next;
     }
     free(prev);
+    map->map->entityList = nullptr;
 }
 
 void killEntity(EntityNode *entity, MapViewport *map){
@@ -154,7 +155,7 @@ void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map, float time
     if(entity->x < mario->x && entity->velX < 0) entity->velX = -entity->velX;
     else if(entity->x > mario->x && entity->velX > 0) entity->velX = -entity->velX;
 
-    if(entity->isOnGround && isOnLedge(entity, map, timeDelta)) entity->velX = -entity->velX;
+    if(isOnLedge(entity, map, timeDelta)) entity->velX = -entity->velX;
 }
 
 void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
@@ -210,12 +211,15 @@ void fireballAI(EntityNode *entity, float timeDelta){
     while(rotation->angle > 2 * M_PI) rotation->angle -= 2 * M_PI;
 
     entity->x += (1.0f - entity->width)/2;
-    entity->x += rotation->radius * (sin(rotation->angle) - sin(prevAngle));
+    entity->x += rotation->radius * (cos(rotation->angle) - cos(prevAngle));
     entity->x -= (1.0f - entity->width)/2;
     
-    entity->y -= (1.0f - entity->height)/2;
-    entity->y += rotation->radius * (cos(rotation->angle) - cos(prevAngle));
     entity->y += (1.0f - entity->height)/2;
+    float yAdd = sin(rotation->angle);
+    yAdd -= sin(prevAngle);
+    yAdd *= rotation->radius;
+    entity->y += rotation->radius * (sin(rotation->angle) - sin(prevAngle));
+    entity->y -= (1.0f - entity->height)/2;
 }
 
 void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewport *map){

@@ -231,8 +231,8 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
 
             entity->type = type;
             setEntityDimensions(entity, type);
-            entity->x = x + (1.0f - entity->width) / 2;
-            entity->y = y - (1.0f - entity->height) / 2 + i * entity->height;
+            entity->x = x + (1.0f - entity->width) / 2 + i * entity->height;
+            entity->y = y + (1.0f - entity->height) / 2;
             entity->isOnGround = true;
             entity->velX = 0;
             entity->velY = 0;
@@ -242,7 +242,7 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             entity->entity = malloc(sizeof(Rotation));
             Rotation *rotation = static_cast<Rotation*>(entity->entity);
             rotation->angle = 0;
-            rotation->radius = 0;
+            rotation->radius = i * entity->height;
             result = entity;
         }
         return result;
