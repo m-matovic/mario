@@ -11,31 +11,7 @@ static int lives = 3;
 
 int main(void)
 {
-    //Iteracija trenutnog prikaza mape
     MapViewport *map = mapInit("worlds/1");
-    for(int y = 0; y < VIEWPORT_HEIGHT; y++){
-        for(int x = 0; x < VIEWPORT_WIDTH; x++){
-            Block foregroundBlock = map->viewport[(map->yFront + y) % VIEWPORT_HEIGHT][(map->front + x) % VIEWPORT_WIDTH]; 
-            int xCord = map->y + y; //apsolutne x i y koordinate
-            int yCord = map->x + x;
-            int backgroundBlokc = getBackgroundBlock(map->map, xCord, yCord);
-        }
-    }
-
-    //Iteracija kroz zive entitete
-    /*
-    EntityNode *itr = map->map->entityList;
-    while(itr != nullptr){
-        itr = itr->next;
-    }
-*/
-    /*
-    //Iteracija kroz mrtve entitete
-    EntityNode *itr = map->map->deadEntities;
-    while(itr != nullptr){
-        itr = itr->next;
-    }
-*/
     glfwinit("mario");
 
     int showmenu = 1;
@@ -70,16 +46,42 @@ int main(void)
         system("cls");
         frminit();
 
-        /* Sprite drawing test */
-        draw_background(21, 1200, 100);
-        draw_block(36, 1200, 100);
-        draw_entity(PIRANHA_PLANT, 500, 500);
-        draw_entity(BOWSER, 600, 500);
-        draw_entity(GOOMBA, 700, 500);
-        draw_entity(20, 800, 500);
-        draw_entity(KOOPA_TROOPA, 900, 500);
+        for(int y = 0; y < VIEWPORT_HEIGHT; y++)
+        {
+            for(int x = 0; x < VIEWPORT_WIDTH; x++)
+            {
+                int xCord = map->y + y; //apsolutne x i y koordinate
+                int yCord = map->x + x;
+                int backgroundBlock = getBackgroundBlock(map->map, xCord, yCord);
 
-        //time(&current_time);
+                if(backgroundBlock != 255)
+                    draw_background(backgroundBlock, xCord * 48, yCord * 48);
+            }
+        }
+
+        for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
+            draw_entity(itr->type, 1, itr->x, itr->y);
+
+        for(int y = 0; y < VIEWPORT_HEIGHT; y++)
+        {
+            for(int x = 0; x < VIEWPORT_WIDTH; x++)
+            {
+                Block foregroundBlock = map->viewport[(map->yFront + y) % VIEWPORT_HEIGHT][(map->front + x) % VIEWPORT_WIDTH]; 
+                int xCord = map->y + y; //apsolutne x i y koordinate
+                int yCord = map->x + x;
+
+                if(foregroundBlock.type != 255)
+                    draw_block(foregroundBlock.type, yCord * 48, xCord * 48);
+            }
+        }
+
+        for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
+            draw_entity(itr->type, -1, itr->x, itr->y);
+
+        /* Entity directional drawing test */
+        draw_entity(KOOPA_TROOPA, 1, 500, 500);
+        draw_entity(KOOPA_TROOPA, -1, 600, 500);
+
         status(score, coins, "1 # 1", 300 - (time - startTime), lives);
 
         frmdraw();
