@@ -18,6 +18,7 @@ using namespace std;
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
 #define VIEWPORT_WIDTH 30
 #define VIEWPORT_HEIGHT 15
+#define SCORE_COUNT 10
 
 
 Block getBlock(unsigned char blockCode) // Convert a block code to a block
@@ -794,6 +795,46 @@ void printMap(MapViewport *map, int blocksPerLine){
         x += blocksPerLine;
         cout << endl;
     }
+}
+
+int* getScore(){
+    int *scores = static_cast<int*> (calloc(SCORE_COUNT, sizeof *scores));
+    FILE *file = fopen("score.list", "rb");
+    if(file == nullptr) return scores;
+
+    int reader;
+    for(int i = 0; i < SCORE_COUNT; i++){
+        int score = 0;
+        for(int j = 2; j >= 0; j--) {
+            reader = 0;
+            if (fread(&reader, 1, 1, file) != 1) break;
+            score |= reader << (j * 8);
+        }
+        scores[i] = score;
+    }
+    fclose(file);
+    return scores;
+}
+
+void storeScore(int score){
+    int *scores = getScore();
+    for(int i = 0; i < SCORE_COUNT; i++) if(score > scores[i]){
+        for(int j = SCORE_COUNT - 1; j > i; j--) scores[j] = scores[j-1];
+        scores[i] = score;
+        break;
+    }
+
+    FILE *file = fopen("score.list", "wb");
+    for(int i = 0; i < SCORE_COUNT; i++){
+        unsigned char reader;
+        for(int j = 2; j >= 0; j--){
+            reader = 0;
+            reader |= scores[i] >> (j * 8);
+            fwrite(&reader, 1, 1, file);
+        }
+        scores[i] = score;
+    }
+    fclose(file);
 }
 
 #endif
