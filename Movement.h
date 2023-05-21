@@ -1,6 +1,6 @@
 #include <cstdint>
-#include "conio.h"
-
+//#include "conio.h"
+#include "MapEntityCommon.hpp"
 typedef struct {
     float x;
     float y;
@@ -11,6 +11,18 @@ typedef struct {
 } Mario;
 
 #define MAX_MOVE_SPEED  7
+
+void moveEntityX(EntityNode *entity, float timeDiff){
+    if (entity->velX != 0){
+        entity->x += entity->velX * timeDiff;
+    }
+}
+
+void moveEntityY(EntityNode *entity, float timeDiff){
+    if (entity->velY != 0){
+        entity->y += entity->velY * timeDiff;
+    }
+}
 
 void moveMario(Mario *mario, float timeDiff){
     if(mario->xSpeed != 0){
@@ -43,24 +55,24 @@ void reduceSpeed(Mario *mario){
         }
     }
 }
-
+/*
 void checkKey(Mario *mario){
     char in;
     if(kbhit()){
         in = getch();
         if (in == 'a'){
-            /*
+
             if(mario->xSpeed > -MAX_MOVE_SPEED){
                 mario->xSpeed -= 0.1;
             }
-             */
+
             mario->xSpeed = -MAX_MOVE_SPEED;
         }else if (in == 'd'){
-            /*
+
             if(mario->xSpeed < MAX_MOVE_SPEED){
                 mario->xSpeed += 0.1;
             }
-             */
+
             mario->xSpeed = MAX_MOVE_SPEED;
         }
 
@@ -69,8 +81,9 @@ void checkKey(Mario *mario){
             mario->hasJumped = true;
             mario->y = 0.00001;
         }
-    } /*else if (!kbhit() && !mario->hasJumped){
+    } else if (!kbhit() && !mario->hasJumped){
         reduceSpeed(mario);
     }
-    */
+
 }
+*/

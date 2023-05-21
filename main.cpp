@@ -2,6 +2,7 @@
 #include <time.h>
 #include "MapEntityCommon.hpp"
 //#include "Movement.h"
+#include "sys/time.h"
 #include "ui.h"
 
 static int score = 0;
@@ -22,17 +23,19 @@ int main(void)
     }
 
     //Iteracija kroz zive entitete
+    /*
     EntityNode *itr = map->map->entityList;
     while(itr != nullptr){
         itr = itr->next;
     }
-
+*/
+    /*
     //Iteracija kroz mrtve entitete
     EntityNode *itr = map->map->deadEntities;
     while(itr != nullptr){
         itr = itr->next;
     }
-
+*/
     glfwinit("mario");
 
     int showmenu = 1;
@@ -52,8 +55,19 @@ int main(void)
     time_t level_start, current_time;
     time(&level_start);
 
+    struct timeval current;
+    gettimeofday(&current, NULL);
+    float time = current.tv_sec %10 + current.tv_usec / 1000000;
+    float startTime = time;
     while(!shouldEnd())
     {
+        gettimeofday(&current, NULL);
+        float newTime = current.tv_sec %10 + current.tv_usec / 1000000;
+        float timeDiff = newTime - time;
+        time = newTime;
+        printf("%f", timeDiff);
+
+        system("cls");
         frminit();
 
         /* Sprite drawing test */
@@ -65,8 +79,8 @@ int main(void)
         draw_entity(20, 800, 500);
         draw_entity(KOOPA_TROOPA, 900, 500);
 
-        time(&current_time);
-        status(score, coins, "1 # 1", 300 - (current_time - level_start), lives);
+        //time(&current_time);
+        status(score, coins, "1 # 1", 300 - (time - startTime), lives);
 
         frmdraw();
     }
