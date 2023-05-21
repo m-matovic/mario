@@ -111,7 +111,7 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
 }
 
 void entityFall(EntityNode *entity, MapViewport *map){
-    int floatingEntities[] = {PIRANHA_PLANT, FIRE_BAR, HAMMER, FIREBALL};
+    int floatingEntities[] = {PIRANHA_PLANT, FIRE_BAR, HAMMER, FIREBALL, PLATFORM};
     for(int i = 0; i < sizeof(floatingEntities)/sizeof(floatingEntities[0]); i++)
         if(floatingEntities[i] == entity->type) return;
 
@@ -269,6 +269,17 @@ void platformAI(EntityNode *entity, MapViewport *map){
         if(entity->y < 0) entity->y = map->map->height - 1;
         else if(entity->y >= map->map->height) entity->y = 0;
     }
+    else if(entity->velX != 0 && !static_cast<Platform*> (entity->entity)->master){
+        EntityNode *itr = entity;
+        if(entity->velX > 0) 
+            while(!static_cast<Platform*> (itr->entity)->master) 
+                itr = static_cast<Platform*> (itr->entity)->next;
+        else if(entity->velX < 0) 
+            while(!static_cast<Platform*> (itr->entity)->master) 
+                itr = static_cast<Platform*> (itr->entity)->prev;
+        
+        entity->velX = itr->velX;
+    }
 }
 
 void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
@@ -282,7 +293,8 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         else if(itr->type == FIRE_BAR) fireballAI(itr, timeDelta);
         else if(itr->type == BOWSER) bowserAI(itr, mario, timeDelta, map);
         else if(itr->type == PLATFORM) platformAI(itr, map);
-        else if(itr->type != MARIO) smartAI(itr, mario, map, timeDelta);       
+        else if(itr->type != MARIO && itr->type != KOOPA_SHELL) smartAI(itr, mario, map, timeDelta);   
+
         if(!itr->isOnGround) entityFall(itr, map);
         itr->next;
     }

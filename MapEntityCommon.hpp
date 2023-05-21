@@ -70,6 +70,12 @@ typedef struct {
     float angle;
 } Rotation;
 
+typedef struct{
+    bool master;
+    EntityNode* next;
+    EntityNode* prev;
+} Platform;
+
 typedef struct {
     EntityNode *entityList;
     EntityNode *deadEntities;
@@ -182,7 +188,30 @@ void setEntityStartingVelocity(EntityNode *entity, Map *map) {
 }
 
 void entityToBlockCollision(EntityNode *entity){
-    entity->velX = -entity->velX;
+    if(entity->type == PLATFORM){
+        if(static_cast<Platform*> (entity->entity)->master){
+            static_cast<Platform*> (entity->entity)->master = false;
+            if(entity->velX < 0){
+                EntityNode *itr = entity;
+                while(static_cast<Platform*> (itr->entity)->next != nullptr){
+                    itr->velX = -itr->velX;
+                    itr = static_cast<Platform*> (itr->entity)->next;
+                }
+                static_cast<Platform*> (itr->entity)->master = true;
+            }
+            else {
+                if(entity->velX < 0){
+                EntityNode *itr = entity;
+                while(static_cast<Platform*> (itr->entity)->prev != nullptr){
+                    itr->velX = -itr->velX;
+                    itr = static_cast<Platform*> (itr->entity)->prev;
+                }
+                static_cast<Platform*> (itr->entity)->master = true;
+            }
+            }
+        }
+    }
+    else entity->velX = -entity->velX;
 }
 
 void addDeadEntity(EntityNode *entity, MapViewport *map){
@@ -226,6 +255,7 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
     entity->type = type;
     entity->x = x;
     entity->y = y;
+    if(entity->type == PIRANHA_PLANT) entity->x -= 0.5f;
     setEntityDimensions(entity, type);
     setEntityStartingVelocity(entity, map);
     switch(type){
@@ -258,6 +288,13 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             timer->timer = PROJECTILE_LIFE;
             timer->state = 0;
             break;
+        }
+        case PLATFORM:{
+            entity->entity = malloc(sizeof(Platform));
+            Platform *platform = static_cast<Platform*> (entity->entity);
+            platform->master = false;
+            platform->next = nullptr;
+            platform->prev = nullptr;
         }
         default:
             entity->entity = nullptr;

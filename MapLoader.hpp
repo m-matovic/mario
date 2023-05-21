@@ -7,6 +7,7 @@
 #include <cmath>
 #include <iostream>
 #include <cstring>
+#include <vector>
 
 using namespace std;
 
@@ -290,10 +291,14 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
                         }
                         else if(round(itr->x) == x && round(itr->y) + 1 == y){
                             itr->velY = ENTITY_SPEED;
+                            Platform *platform = static_cast<Platform*> (itr->entity);
+                            platform->master = true;
                             break;
                         }
                         else if(round(itr->x) == x && round(itr->y) - 1 == y){
                             itr->velY = -ENTITY_SPEED;
+                            Platform *platform = static_cast<Platform*> (itr->entity);
+                            platform->master = true;
                             break;
                         }
                         itr = itr->next;
@@ -333,6 +338,41 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
     }
 
     fclose(mapFile);
+
+    if(background){
+        vector<EntityNode*> platforms;
+        EntityNode *itr = map->entityList;
+        while(itr != nullptr){
+            Platform *platform = static_cast<Platform*> (itr->entity);
+            if(platform->master == true) goto endOfIter;
+
+            for(int i = 0; i < platforms.size(); i++)
+                if(itr->velX == platforms[i]->velX && round(itr->x) + 1 == round(platforms[i]->x)){
+                    if(itr->velX > 0){
+                        platform->next = platforms[i];
+                        static_cast<Platform*> (platforms[i]->entity)->prev = itr;
+                        platforms[i] = itr;
+                        goto endOfIter;
+                    }
+                    else if(itr->velX < 0){
+                        Platform *platform2 = static_cast<Platform*> (platforms[i]->entity);
+                        platform2->master = false;
+                        platform->next = platforms[i];
+                        static_cast<Platform*> (platforms[i]->entity)->prev = itr;
+                        platform->master = true;
+                        platforms[i] = itr;
+                        goto endOfIter;
+                    }
+                }
+
+            platform->master = true;
+            platforms.push_back(itr);
+
+            endOfIter:
+            itr = itr->next;
+        }
+    }
+
     return map;
 }
 
