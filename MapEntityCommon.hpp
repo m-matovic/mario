@@ -37,7 +37,7 @@ enum BlockContent {
 
 enum Entities {
     PIRANHA_PLANT, BLOOBER, BUZZY_BEETLE, CHEEP_CHEEP, FIRE_BAR, HAMMER_BROTHER, KOOPA_PARATROOPA,
-    KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, PLATFORM, FIREFLOWER,
+    KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, PLATFORM, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, FIREFLOWER,
     KOOPA_SHELL, BOWSER, HAMMER, FIREBALL, MARIO
 };
 
@@ -295,6 +295,7 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             platform->master = false;
             platform->next = nullptr;
             platform->prev = nullptr;
+            break;
         }
         default:
             entity->entity = nullptr;

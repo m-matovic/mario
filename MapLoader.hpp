@@ -281,6 +281,11 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
                     block = AIR_BG;
                     EntityNode *itr = map->entityList;
                     while(itr != nullptr){
+                        if(itr->type != PLATFORM) {
+                            itr = itr->next;
+                            continue;
+                        }
+
                         if(round(itr->x) - 1 == x && round(itr->y) == y) {
                             itr->velX = -ENTITY_SPEED;
                             break;
@@ -343,11 +348,14 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
         vector<EntityNode*> platforms;
         EntityNode *itr = map->entityList;
         while(itr != nullptr){
-            Platform *platform = static_cast<Platform*> (itr->entity);
+            Platform *platform;
+            if(itr->type != PLATFORM) goto endOfIter;
+            platform = static_cast<Platform*> (itr->entity);
             if(platform->master == true) goto endOfIter;
 
-            for(int i = 0; i < platforms.size(); i++)
-                if(itr->velX == platforms[i]->velX && round(itr->x) + 1 == round(platforms[i]->x)){
+            for(int i = 0; i < platforms.size(); i++) {
+                cout << round(itr->x) << ":" << round(platforms[i]->x) << endl;
+                if(itr->velX * platforms[i]->velX > 0 && round(itr->x) + 1 == round(platforms[i]->x)){
                     if(itr->velX > 0){
                         platform->next = platforms[i];
                         static_cast<Platform*> (platforms[i]->entity)->prev = itr;
@@ -358,12 +366,13 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
                         Platform *platform2 = static_cast<Platform*> (platforms[i]->entity);
                         platform2->master = false;
                         platform->next = platforms[i];
-                        static_cast<Platform*> (platforms[i]->entity)->prev = itr;
+                        platform2->prev = itr;
                         platform->master = true;
                         platforms[i] = itr;
                         goto endOfIter;
                     }
                 }
+            }
 
             platform->master = true;
             platforms.push_back(itr);
