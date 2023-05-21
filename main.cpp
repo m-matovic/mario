@@ -10,6 +10,29 @@ static int lives = 3;
 
 int main(void)
 {
+    //Iteracija trenutnog prikaza mape
+    MapViewport *map = mapInit("worlds/1");
+    for(int y = 0; y < VIEWPORT_HEIGHT; y++){
+        for(int x = 0; x < VIEWPORT_WIDTH; x++){
+            Block foregroundBlock = map->viewport[(map->yFront + y) % VIEWPORT_HEIGHT][(map->front + x) % VIEWPORT_WIDTH]; 
+            int xCord = map->y + y; //apsolutne x i y koordinate
+            int yCord = map->x + x;
+            int backgroundBlokc = getBackgroundBlock(map->map, xCord, yCord);
+        }
+    }
+
+    //Iteracija kroz zive entitete
+    EntityNode *itr = map->map->entityList;
+    while(itr != nullptr){
+        itr = itr->next;
+    }
+
+    //Iteracija kroz mrtve entitete
+    EntityNode *itr = map->map->deadEntities;
+    while(itr != nullptr){
+        itr = itr->next;
+    }
+
     glfwinit("mario");
 
     int showmenu = 1;
