@@ -156,6 +156,7 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
         fread(&temp, 1, 1, mapFile);
         numBuffer |= temp;
         map->entityList = nullptr;
+        map->deadEntities = nullptr;
         map->length = numBuffer << 1 >> 1;
         if (map->length > MAX_LENGTH) throw length_error("Maximal map length exceeded!");
         else if(map->length < VIEWPORT_WIDTH) throw length_error("Minimal map length not met!");

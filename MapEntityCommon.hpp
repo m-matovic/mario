@@ -142,9 +142,11 @@ void setEntityDimensions(EntityNode *entity, int type){
         case PLATFORM:
             entity->width = 1.0f;
             entity->height = 0.5f;
+            break;
         case HAMMER_BROTHER:
             entity->width = 1.0f;
             entity->height = 2.0f;
+            break;
         case FIRE_BAR:
             entity->width = 0.5f;
             entity->height = 0.5f;
@@ -168,6 +170,7 @@ void setEntityDimensions(EntityNode *entity, int type){
         case BOWSER:
             entity->height = 2.0f;
             entity->width = 2.0f;
+            break;
         default:
             entity->height = 1.0f;
             entity->width = 1.0f;
@@ -180,14 +183,8 @@ void setEntityStartingVelocity(EntityNode *entity, Map *map) {
     entity->accX = 0;
     entity->velY = 0;
     if(entity->type == PLATFORM || entity->type == PIRANHA_PLANT || entity->type == FIRE_BAR) entity->velX = 0;
-    if(getMapBlock(map, floor(entity->x), floor(entity->y) + 1) != AIR){
-        entity->isOnGround = false;
-        entity->accY = GRAVITY_ACCELERATION;
-    }
-    else {
-        entity->isOnGround = true;
-        entity->accY = 0;
-    }
+    entity->isOnGround = true;
+    entity->accY = 0;
 }
 
 void entityToBlockCollision(EntityNode *entity){

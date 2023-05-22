@@ -9,19 +9,19 @@
 #define PIRANHA_RANGE 5.0f
 #define PIRANHA_DOWNTIME 5.0f
 #define PIRANHA_UPTIME 5.0f
-#define JUMP_VELOCITY 2.0f
+#define JUMP_VELOCITY 8.0f
 #define FIRE_BAR_ANGULAR_VELOCITY 2.0f
 #define BOWSER_HAMMER_COOLDOWN 2.0f
-#define BOWSER_FIRE_COOLDOWN 1.0f
-#define BOWSER_RANGE 10.0f
+#define BOWSER_FIRE_COOLDOWN 2.0f
+#define BOWSER_RANGE 20.0f
 #define HAMMER_COUNT 3
 
 void removeEntity(EntityNode *entity, MapViewport *map){
     EntityNode *itr = map->map->deadEntities;
     if(itr == entity) map->map->deadEntities = entity->next;
     else {
-        while(itr->next != entity && itr != nullptr) itr = itr->next;
-        if(itr != nullptr) itr->next = entity->next;
+        while(itr->next != entity && itr->next != nullptr) itr = itr->next;
+        if(itr->next != nullptr) itr->next = entity->next;
     }
     if(entity->entity != NULL) free(entity->entity);
     free(entity);
@@ -31,8 +31,8 @@ void removeAliveEntity(EntityNode *entity, MapViewport *map){
     EntityNode *itr = map->map->entityList;
     if(itr == entity) map->map->entityList = entity->next;
     else {
-        while(itr->next != entity && itr != nullptr) itr = itr->next;
-        if(itr != nullptr) itr->next = entity->next;
+        while(itr->next != entity && itr->next != nullptr) itr = itr->next;
+        if(itr->next != nullptr) itr->next = entity->next;
     }
     if(entity->entity != NULL) free(entity->entity);
     free(entity);
@@ -101,8 +101,8 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
     }
 
     if((entity1->type == KOOPA_SHELL) != (entity2->type == KOOPA_SHELL)){
-        if(entity1->type == KOOPA_SHELL) killEntity(entity2, map); 
-        else killEntity(entity1, map);
+        if(entity1->type == KOOPA_SHELL) entity2->type = 254; 
+        else entity1->type = 254;
         return;
     }
 
@@ -121,7 +121,7 @@ void entityFall(EntityNode *entity, MapViewport *map){
     }
     else if(entity->velY < TERMINAL_VELOCITY) entity->accY = GRAVITY_ACCELERATION;
 
-    if(entity->y >= map->map->height) killEntity(entity, map);
+    if(entity->y >= map->map->height) entity->type = 254;
 }
 
 bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta) {
@@ -226,8 +226,14 @@ void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewpor
     if(mario->x < entity->x + entity->width/2) timer->direction = false;
     else timer->direction = true;
 
+    if(timer->timer > std::max(BOWSER_HAMMER_COOLDOWN, BOWSER_FIRE_COOLDOWN)) {
+        if(timer->state == 0) timer->timer = BOWSER_FIRE_COOLDOWN;
+        else timer->timer = BOWSER_HAMMER_COOLDOWN;
+    }
+
     timer->timer -= timeDelta;
     if(timer->timer < 0) timer->timer = 0;
+    printf("%f:%d\n", timer->timer, timer->state);
 
     switch(timer->state){
         case 0: //Ready to fire
@@ -236,7 +242,7 @@ void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewpor
                 timer->state = 1;
 
                 EntityNode *fireball = summonEntity(FIREBALL, entity->x, entity->y-1, map->map);
-                fireball->velX = (timer->direction ? 1 : -1) * ENTITY_SPEED;
+                fireball->velX = (timer->direction ? 1 : -1) * 2 * ENTITY_SPEED;
                 fireball->isOnGround = true;
 
                 entity->velX = -entity->velX;
@@ -248,9 +254,9 @@ void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewpor
                 timer->state = 0;
 
                 for(int i = 0; i < HAMMER_COUNT; i++){
-                    EntityNode *hammer = summonEntity(HAMMER, entity->x, entity->y-i, map->map);
-                    hammer->velX = (timer->direction ? 1 : -1) * ENTITY_SPEED;
-                    hammer->velY = -2.0f;
+                    EntityNode *hammer = summonEntity(HAMMER, entity->x + entity->width - i, entity->y -i, map->map);
+                    hammer->velX = (timer->direction ? 1 : -1) * 3 * ENTITY_SPEED;
+                    hammer->velY = -JUMP_VELOCITY*2/3;
                     hammer->accY = GRAVITY_ACCELERATION;
                     hammer->isOnGround = false;
                 }
@@ -264,7 +270,7 @@ void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewpor
 void projectileAI(EntityNode *entity, MapViewport *map, float timeDelta){
     Timer *timer = static_cast<Timer*>(entity->entity);
     timer->timer -= timeDelta;
-    if(timer->timer <= 0) removeAliveEntity(entity, map);
+    if(timer->timer <= 0 || entity->isOnGround) entity->type = 255;
 }
 
 void platformAI(EntityNode *entity, MapViewport *map){
@@ -287,14 +293,19 @@ void platformAI(EntityNode *entity, MapViewport *map){
 
 void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
     EntityNode *itr = map->map->entityList;
+    int AIless[] = {MARIO, MUSHROOM_ENTITY, STAR_ENTITY, FIREFLOWER, KOOPA_SHELL};
     while(itr != nullptr){
         if(map->x > itr->x || itr->x > map->x + VIEWPORT_WIDTH || itr->type == MARIO) {
             itr = itr->next;
             continue;
         }
+
         itr->isOnGround = true;
         if(itr->isOnGround && getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height)) == AIR) itr->isOnGround = false;
-        if(itr->isOnGround && itr->velY > 0 && itr->type != PIRANHA_PLANT) itr->velY = 0;
+        if(itr->isOnGround && itr->velY > 0 && itr->type != PIRANHA_PLANT) {
+            itr->velY = 0;
+            itr->accY = 0;
+        }
 
         if(itr->type == KOOPA_PARATROOPA) koopaParatroopaAI(itr);
         if(itr->type == PIRANHA_PLANT) piranhaPlantAI(itr, mario, timeDelta); 
@@ -302,7 +313,14 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         else if(itr->type == FIRE_BAR) fireballAI(itr, timeDelta);
         else if(itr->type == BOWSER) bowserAI(itr, mario, timeDelta, map);
         else if(itr->type == PLATFORM) platformAI(itr, map);
-        else if(itr->type != MARIO && itr->type != KOOPA_SHELL) smartAI(itr, mario, map, timeDelta);   
+        else {
+            bool hasAI = true;
+            for(int i = 0; i < sizeof AIless / sizeof *AIless; i++) if(itr->type == AIless[i]){
+                hasAI = false;
+                break;
+            }
+            if(hasAI) smartAI(itr, mario, map, timeDelta);   
+        }
 
         if(!itr->isOnGround) entityFall(itr, map);
         
@@ -311,8 +329,13 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
             if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX;
             moveEntityY(itr, timeDelta);
         }
-
+        EntityNode *temp = nullptr;
+        if(itr->type == 255 || itr->type == 254) temp = itr;
         itr = itr->next;
+        if(temp != nullptr) {
+            if(temp->type == 255) removeAliveEntity(temp, map);
+            else if(temp->type == 254) killEntity(temp, map);
+        }
     }
 
     itr = map->map->deadEntities;
