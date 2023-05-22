@@ -838,4 +838,21 @@ void storeScore(int score){
     fclose(file);
 }
 
+void freeMap(MapViewport *map){
+    for(int i = 0; i < VIEWPORT_HEIGHT; i++) free(map->viewport[i]);
+    free(map->viewport);
+
+    clearEntityList(map);
+    while(map->map->deadEntities != nullptr) removeEntity(map->map->deadEntities, map);
+
+    for(int i = 0; i < map->map->length / CHUNK_LEN + (map->map->length % CHUNK_LEN ? 1 : 0); i++) {
+        free(map->map->map[i]);
+        free(map->map->background[i]);
+    }
+    free(map->map->map);
+    free(map->map->background);
+    free(map->map);
+    free(map);
+}
+
 #endif

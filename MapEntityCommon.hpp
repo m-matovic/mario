@@ -55,6 +55,7 @@ typedef struct EntityNode {
     float velY;
     float accX;
     float accY;
+    float timer;
 
     unsigned char type;
     bool isOnGround;
@@ -63,10 +64,9 @@ typedef struct EntityNode {
 } EntityNode;
 
 typedef struct {
-    float timer;
     int state;
     bool direction;
-} Timer;
+} State;
 
 typedef struct {
     float radius;
@@ -257,38 +257,28 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
     entity->y = y;
     setEntityDimensions(entity, type);
     setEntityStartingVelocity(entity, map);
-    entity->y -= entity->height - 1;
+    if(entity->height > 1) entity->y -= entity->height - 1;
     switch(type){
         case PIRANHA_PLANT: {
             entity->x -= 0.5f;
             entity->y += entity->height - 1;
-            entity->entity = malloc(sizeof(Timer));
-            Timer *timer = static_cast<Timer*>(entity->entity);
-            timer->timer = 0;
-            timer->state = 0;
+            entity->entity = malloc(sizeof(State));
+            State *state = static_cast<State*>(entity->entity);
+            entity->timer = 0;
+            state->state = 0;
             break;
         }
         case BOWSER: {
-            entity->entity = malloc(sizeof(Timer));
-            Timer *timer = static_cast<Timer*>(entity->entity);
-            timer->timer = 0;
-            timer->state = 0;
-            timer->direction = false;
+            entity->entity = malloc(sizeof(State));
+            State *state = static_cast<State*>(entity->entity);
+            entity->timer = 0;
+            state->state = 0;
+            state->direction = false;
         }
         case FIREBALL:
-            {
-            entity->entity = malloc(sizeof(Timer));
-            Timer *timer = static_cast<Timer*>(entity->entity);
-            timer->timer = PROJECTILE_LIFE;
-            timer->state = 0;
-            break;
-        }
         case HAMMER:
             {
-            entity->entity = malloc(sizeof(Timer));
-            Timer *timer = static_cast<Timer*>(entity->entity);
-            timer->timer = PROJECTILE_LIFE;
-            timer->state = 0;
+            entity->timer = PROJECTILE_LIFE;
             break;
         }
         case PLATFORM:{
