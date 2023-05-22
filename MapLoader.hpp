@@ -7,6 +7,7 @@
 #include <cmath>
 #include <iostream>
 #include <cstring>
+#include <vector>
 
 using namespace std;
 
@@ -15,8 +16,7 @@ using namespace std;
 #define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
-#define VIEWPORT_WIDTH 30
-#define VIEWPORT_HEIGHT 15
+#define SCORE_COUNT 10
 
 
 Block getBlock(unsigned char blockCode) // Convert a block code to a block
@@ -80,10 +80,6 @@ Block getBlock(unsigned char blockCode) // Convert a block code to a block
             block.type = INVISIBLE_BLOCK;
     }
     return block;
-}
-
-EntityNode* getEntity(int entityCode, int x, int y, Map *map){
-    return summonEntity(entityCode - PIRANHA_PLANT, x, y, map);
 }
 
 MapViewport* getViewport(Map *map) // Get a viewport of a map, which displays all the blocks within a predefined area and can be shifted in any direction.
@@ -284,6 +280,11 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
                     block = AIR_BG;
                     EntityNode *itr = map->entityList;
                     while(itr != nullptr){
+                        if(itr->type != PLATFORM) {
+                            itr = itr->next;
+                            continue;
+                        }
+
                         if(round(itr->x) - 1 == x && round(itr->y) == y) {
                             itr->velX = -ENTITY_SPEED;
                             break;
@@ -294,10 +295,14 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
                         }
                         else if(round(itr->x) == x && round(itr->y) + 1 == y){
                             itr->velY = ENTITY_SPEED;
+                            Platform *platform = static_cast<Platform*> (itr->entity);
+                            platform->master = true;
                             break;
                         }
                         else if(round(itr->x) == x && round(itr->y) - 1 == y){
                             itr->velY = -ENTITY_SPEED;
+                            Platform *platform = static_cast<Platform*> (itr->entity);
+                            platform->master = true;
                             break;
                         }
                         itr = itr->next;
@@ -308,16 +313,18 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
             else {
                 for (; y < yPos; y++) setMapBlock(map, x, y, AIR);
                 if(block >= PIRANHA_PLANT_BLOCK && block <= PLATFORM_BLOCK){
-                    if(map->entityList == nullptr) map->entityList = getEntity(block, x, y, map);
-                    else getEntity(block, x, y, map);
+                    if(map->entityList == nullptr) map->entityList = summonEntity(block - PIRANHA_PLANT_BLOCK, x, y, map);
+                    else summonEntity(block - PIRANHA_PLANT_BLOCK, x, y, map);
 
                     if(block == PIRANHA_PLANT_BLOCK) block = PIPE_TOP_RIGHT;
-                    else if(block == CHEEP_CHEEP_BLOCK || block == BLOOBER_BLOCK) block = WATER;
+                    else if(block == FIRE_BAR_BLOCK) block = QUESTION_BLOCK_EMPTY;
                     else block = AIR;
                 }
                 if(block == BOWSER_BRIDGE && y > 0 && getMapBlock(map, x, y-1) == BOWSER_BRIDGE) {
-                    if(map->entityList == nullptr) map->entityList = getEntity(PIRANHA_PLANT + BOWSER, x, y, map);
-                    else getEntity(PIRANHA_PLANT + BOWSER, x, y, map);
+                    if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y, map);
+                    else summonEntity(BOWSER, x, y, map);
+                    if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y, map);
+                    else summonEntity(BOWSER, x, y, map);
                     setMapBlock(map, x, y-1, AIR);
                 }
                 setMapBlock(map, x, y, block);
@@ -337,6 +344,45 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
     }
 
     fclose(mapFile);
+
+    if(background){
+        vector<EntityNode*> platforms;
+        EntityNode *itr = map->entityList;
+        while(itr != nullptr){
+            Platform *platform;
+            if(itr->type != PLATFORM) goto endOfIter;
+            platform = static_cast<Platform*> (itr->entity);
+            if(platform->master == true) goto endOfIter;
+
+            for(int i = 0; i < platforms.size(); i++) {
+                cout << round(itr->x) << ":" << round(platforms[i]->x) << endl;
+                if(itr->velX * platforms[i]->velX > 0 && round(itr->x) + 1 == round(platforms[i]->x)){
+                    if(itr->velX > 0){
+                        platform->next = platforms[i];
+                        static_cast<Platform*> (platforms[i]->entity)->prev = itr;
+                        platforms[i] = itr;
+                        goto endOfIter;
+                    }
+                    else if(itr->velX < 0){
+                        Platform *platform2 = static_cast<Platform*> (platforms[i]->entity);
+                        platform2->master = false;
+                        platform->next = platforms[i];
+                        platform2->prev = itr;
+                        platform->master = true;
+                        platforms[i] = itr;
+                        goto endOfIter;
+                    }
+                }
+            }
+
+            platform->master = true;
+            platforms.push_back(itr);
+
+            endOfIter:
+            itr = itr->next;
+        }
+    }
+
     return map;
 }
 
@@ -749,6 +795,46 @@ void printMap(MapViewport *map, int blocksPerLine){
         x += blocksPerLine;
         cout << endl;
     }
+}
+
+int* getScore(){
+    int *scores = static_cast<int*> (calloc(SCORE_COUNT, sizeof *scores));
+    FILE *file = fopen("score.list", "rb");
+    if(file == nullptr) return scores;
+
+    int reader;
+    for(int i = 0; i < SCORE_COUNT; i++){
+        int score = 0;
+        for(int j = 2; j >= 0; j--) {
+            reader = 0;
+            if (fread(&reader, 1, 1, file) != 1) break;
+            score |= reader << (j * 8);
+        }
+        scores[i] = score;
+    }
+    fclose(file);
+    return scores;
+}
+
+void storeScore(int score){
+    int *scores = getScore();
+    for(int i = 0; i < SCORE_COUNT; i++) if(score > scores[i]){
+        for(int j = SCORE_COUNT - 1; j > i; j--) scores[j] = scores[j-1];
+        scores[i] = score;
+        break;
+    }
+
+    FILE *file = fopen("score.list", "wb");
+    for(int i = 0; i < SCORE_COUNT; i++){
+        unsigned char reader;
+        for(int j = 2; j >= 0; j--){
+            reader = 0;
+            reader |= scores[i] >> (j * 8);
+            fwrite(&reader, 1, 1, file);
+        }
+        scores[i] = score;
+    }
+    fclose(file);
 }
 
 #endif

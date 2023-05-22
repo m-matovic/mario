@@ -5,9 +5,12 @@
 
 #define CHUNK_LEN 32 // The map is split into chunks with dimensions map.height * CHUNK_LEN to avoid memory allocation problems
 #define FIRE_BAR_LENGTH 6
-#define GRAVITY_ACCELERATION 1.0f
-#define ENTITY_SPEED 1.0f
+#define GRAVITY_ACCELERATION 9.81f
+#define ENTITY_SPEED 2.0f
 #define PROJECTILE_LIFE 5.0f
+#define VIEWPORT_WIDTH 30
+#define VIEWPORT_HEIGHT 15
+#define EPS 0.1f
 
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,
@@ -37,7 +40,7 @@ enum BlockContent {
 
 enum Entities {
     PIRANHA_PLANT, BLOOBER, BUZZY_BEETLE, CHEEP_CHEEP, FIRE_BAR, HAMMER_BROTHER, KOOPA_PARATROOPA,
-    KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, PLATFORM, FIREFLOWER,
+    KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, PLATFORM, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, FIREFLOWER,
     KOOPA_SHELL, BOWSER, HAMMER, FIREBALL, MARIO
 };
 
@@ -69,6 +72,12 @@ typedef struct {
     float radius;
     float angle;
 } Rotation;
+
+typedef struct{
+    bool master;
+    EntityNode* next;
+    EntityNode* prev;
+} Platform;
 
 typedef struct {
     EntityNode *entityList;
@@ -170,7 +179,7 @@ void setEntityStartingVelocity(EntityNode *entity, Map *map) {
     entity->velX = -ENTITY_SPEED;
     entity->accX = 0;
     entity->velY = 0;
-    if(entity->type == PLATFORM) entity->velX = 0;
+    if(entity->type == PLATFORM || entity->type == PIRANHA_PLANT || entity->type == FIRE_BAR) entity->velX = 0;
     if(getMapBlock(map, floor(entity->x), floor(entity->y) + 1) != AIR){
         entity->isOnGround = false;
         entity->accY = GRAVITY_ACCELERATION;
@@ -182,7 +191,30 @@ void setEntityStartingVelocity(EntityNode *entity, Map *map) {
 }
 
 void entityToBlockCollision(EntityNode *entity){
-    entity->velX = -entity->velX;
+    if(entity->type == PLATFORM){
+        if(static_cast<Platform*> (entity->entity)->master){
+            static_cast<Platform*> (entity->entity)->master = false;
+            if(entity->velX < 0){
+                EntityNode *itr = entity;
+                while(static_cast<Platform*> (itr->entity)->next != nullptr){
+                    itr->velX = -itr->velX;
+                    itr = static_cast<Platform*> (itr->entity)->next;
+                }
+                static_cast<Platform*> (itr->entity)->master = true;
+            }
+            else {
+                if(entity->velX < 0){
+                EntityNode *itr = entity;
+                while(static_cast<Platform*> (itr->entity)->prev != nullptr){
+                    itr->velX = -itr->velX;
+                    itr = static_cast<Platform*> (itr->entity)->prev;
+                }
+                static_cast<Platform*> (itr->entity)->master = true;
+            }
+            }
+        }
+    }
+    else entity->velX = -entity->velX;
 }
 
 void addDeadEntity(EntityNode *entity, MapViewport *map){
@@ -202,8 +234,8 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
 
             entity->type = type;
             setEntityDimensions(entity, type);
-            entity->x = x + (1.0f - entity->width) / 2;
-            entity->y = y - (1.0f - entity->height) / 2 + i * entity->height;
+            entity->x = x + (1.0f - entity->width) / 2 + i * entity->height;
+            entity->y = y + (1.0f - entity->height) / 2;
             entity->isOnGround = true;
             entity->velX = 0;
             entity->velY = 0;
@@ -213,7 +245,7 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             entity->entity = malloc(sizeof(Rotation));
             Rotation *rotation = static_cast<Rotation*>(entity->entity);
             rotation->angle = 0;
-            rotation->radius = 0;
+            rotation->radius = i * entity->height;
             result = entity;
         }
         return result;
@@ -226,6 +258,7 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
     entity->type = type;
     entity->x = x;
     entity->y = y;
+    if(entity->type == PIRANHA_PLANT) entity->x -= 0.5f;
     setEntityDimensions(entity, type);
     setEntityStartingVelocity(entity, map);
     switch(type){
@@ -257,6 +290,14 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             Timer *timer = static_cast<Timer*>(entity->entity);
             timer->timer = PROJECTILE_LIFE;
             timer->state = 0;
+            break;
+        }
+        case PLATFORM:{
+            entity->entity = malloc(sizeof(Platform));
+            Platform *platform = static_cast<Platform*> (entity->entity);
+            platform->master = false;
+            platform->next = nullptr;
+            platform->prev = nullptr;
             break;
         }
         default:

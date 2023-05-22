@@ -1,21 +1,20 @@
 #ifndef ENTITY_HANDLER_H
 #define ENTITY_HANDLER_H
 
-//#include "Movement.h"
+#include "Movement.h"
 #include <cmath>
 #include <cstdlib>
-#define TERMINAL_VELOCITY 10.0f
+#define TERMINAL_VELOCITY 15.0f
 #define AVOIDANCE_VELOCITY 1.0f
 #define PIRANHA_RANGE 5.0f
 #define PIRANHA_DOWNTIME 5.0f
 #define PIRANHA_UPTIME 5.0f
 #define JUMP_VELOCITY 2.0f
-#define FIRE_BAR_ANGULAR_VELOCITY 1.0f
+#define FIRE_BAR_ANGULAR_VELOCITY 2.0f
 #define BOWSER_HAMMER_COOLDOWN 2.0f
 #define BOWSER_FIRE_COOLDOWN 1.0f
 #define BOWSER_RANGE 10.0f
 #define HAMMER_COUNT 3
-#define GROUND_CLEARANCE 0.25f
 
 void removeEntity(EntityNode *entity, MapViewport *map){
     EntityNode *itr = map->map->deadEntities;
@@ -52,6 +51,7 @@ void clearEntityList(MapViewport *map){
         next = next->next;
     }
     free(prev);
+    map->map->entityList = nullptr;
 }
 
 void killEntity(EntityNode *entity, MapViewport *map){
@@ -111,7 +111,7 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
 }
 
 void entityFall(EntityNode *entity, MapViewport *map){
-    int floatingEntities[] = {PIRANHA_PLANT, FIRE_BAR, HAMMER, FIREBALL};
+    int floatingEntities[] = {PIRANHA_PLANT, FIRE_BAR, HAMMER, FIREBALL, PLATFORM};
     for(int i = 0; i < sizeof(floatingEntities)/sizeof(floatingEntities[0]); i++)
         if(floatingEntities[i] == entity->type) return;
 
@@ -154,7 +154,7 @@ void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map, float time
     if(entity->x < mario->x && entity->velX < 0) entity->velX = -entity->velX;
     else if(entity->x > mario->x && entity->velX > 0) entity->velX = -entity->velX;
 
-    if(entity->isOnGround && isOnLedge(entity, map, timeDelta)) entity->velX = -entity->velX;
+    if(isOnLedge(entity, map, timeDelta)) entity->velX = -entity->velX;
 }
 
 void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
@@ -210,12 +210,15 @@ void fireballAI(EntityNode *entity, float timeDelta){
     while(rotation->angle > 2 * M_PI) rotation->angle -= 2 * M_PI;
 
     entity->x += (1.0f - entity->width)/2;
-    entity->x += rotation->radius * (sin(rotation->angle) - sin(prevAngle));
+    entity->x += rotation->radius * (cos(rotation->angle) - cos(prevAngle));
     entity->x -= (1.0f - entity->width)/2;
     
-    entity->y -= (1.0f - entity->height)/2;
-    entity->y += rotation->radius * (cos(rotation->angle) - cos(prevAngle));
     entity->y += (1.0f - entity->height)/2;
+    float yAdd = sin(rotation->angle);
+    yAdd -= sin(prevAngle);
+    yAdd *= rotation->radius;
+    entity->y += rotation->radius * (sin(rotation->angle) - sin(prevAngle));
+    entity->y -= (1.0f - entity->height)/2;
 }
 
 void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewport *map){
@@ -269,12 +272,29 @@ void platformAI(EntityNode *entity, MapViewport *map){
         if(entity->y < 0) entity->y = map->map->height - 1;
         else if(entity->y >= map->map->height) entity->y = 0;
     }
+    else if(entity->velX != 0 && !static_cast<Platform*> (entity->entity)->master){
+        EntityNode *itr = entity;
+        if(entity->velX > 0) 
+            while(!static_cast<Platform*> (itr->entity)->master) 
+                itr = static_cast<Platform*> (itr->entity)->next;
+        else if(entity->velX < 0) 
+            while(!static_cast<Platform*> (itr->entity)->master) 
+                itr = static_cast<Platform*> (itr->entity)->prev;
+        
+        entity->velX = itr->velX;
+    }
 }
 
 void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
     EntityNode *itr = map->map->entityList;
     while(itr != nullptr){
-        if(itr->isOnGround && getMapBlock(map->map, floor(itr->x), floor(itr->y - GROUND_CLEARANCE)) == AIR) itr->isOnGround = false;
+        if(map->x > itr->x || itr->x > map->x + VIEWPORT_WIDTH || itr->type == MARIO) {
+            itr = itr->next;
+            continue;
+        }
+        itr->isOnGround = true;
+        if(itr->isOnGround && getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height)) == AIR) itr->isOnGround = false;
+        if(itr->isOnGround && itr->velY > 0) itr->velY = 0;
 
         if(itr->type == KOOPA_PARATROOPA) koopaParatroopaAI(itr);
         if(itr->type == PIRANHA_PLANT) piranhaPlantAI(itr, mario, timeDelta); 
@@ -282,9 +302,15 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         else if(itr->type == FIRE_BAR) fireballAI(itr, timeDelta);
         else if(itr->type == BOWSER) bowserAI(itr, mario, timeDelta, map);
         else if(itr->type == PLATFORM) platformAI(itr, map);
-        else if(itr->type != MARIO) smartAI(itr, mario, map, timeDelta);       
+        else if(itr->type != MARIO && itr->type != KOOPA_SHELL) smartAI(itr, mario, map, timeDelta);   
+
         if(!itr->isOnGround) entityFall(itr, map);
-        itr->next;
+
+        moveEntityX(itr, timeDelta);
+        if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX;
+        moveEntityY(itr, timeDelta);
+
+        itr = itr->next;
     }
 
     itr = map->map->deadEntities;
