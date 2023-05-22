@@ -21,7 +21,7 @@
 
 #define BACKGROUNDS_NUMBER 25
 #define BLOCKS_NUMBER 41
-#define ENTITIES_NUMBER 42
+#define ENTITIES_NUMBER 40
 
 #include "nuklear.h"
 #include "nuklear_glfw_gl3.h"
@@ -36,7 +36,8 @@ struct nk_glfw glfw = {0};
 /* struct nk_context *context; */
 struct nk_image backgrounds[BACKGROUNDS_NUMBER];
 struct nk_image blocks[BLOCKS_NUMBER];
-struct nk_image entities[ENTITIES_NUMBER];
+struct nk_image entities_right[ENTITIES_NUMBER];
+struct nk_image entities_left[ENTITIES_NUMBER];
 int entity_widths[ENTITIES_NUMBER];
 int entity_heights[ENTITIES_NUMBER];
 
@@ -207,8 +208,11 @@ void load_entities(void)
 
     for(int i = 0; i < ENTITIES_NUMBER; i++)
     {
-        sprintf(filename, "entities/%d_%d.png", i/2, i%2);
-        entities[i] = img_load_size(filename, entity_widths + i, entity_heights + i);
+        sprintf(filename, "entities/l_%d_%d.png", i/2, i%2);
+        entities_left[i] = img_load_size(filename, entity_widths + i, entity_heights + i);
+
+        sprintf(filename, "entities/r_%d_%d.png", i/2, i%2);
+        entities_right[i] = img_load(filename);
     }
 
     free(filename);
@@ -233,11 +237,16 @@ void draw_block(int type, int x, int y)
     nk_draw_image(out, nk_rect(x, y, SPRITE_SIZE, SPRITE_SIZE), sprite, nk_rgba(255, 255, 255, 255));
 }
 
-void draw_entity(int type, int x, int y)
+void draw_entity(int type, int dir, int x, int y)
 {
     struct nk_command_buffer *out = nk_window_get_canvas(&glfw.ctx);
-    struct nk_image *sprite = &entities[type*2 + (time_of_frame.tv_nsec/125000000 % 2)];
-    /* struct nk_image *sprite = &entities[type*2 + (time_of_frame.tv_nsec/250000000 % 4 == 3)]; */
+    struct nk_image *sprite;
+
+    if(dir > 0)
+        sprite = &entities_right[type*2 + (time_of_frame.tv_nsec/125000000 % 2)];
+    else
+        sprite = &entities_left[type*2 + (time_of_frame.tv_nsec/125000000 % 2)];
+
     nk_draw_image(out, nk_rect(x, y, entity_widths[type*2], entity_heights[type*2]), sprite, nk_rgba(255, 255, 255, 255));
 }
 

@@ -16,9 +16,6 @@ using namespace std;
 #define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
-#define VIEWPORT_WIDTH 30
-#define VIEWPORT_HEIGHT 15
-#define SCORE_COUNT 10
 
 
 Block getBlock(unsigned char blockCode) // Convert a block code to a block
@@ -323,6 +320,8 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
                     else block = AIR;
                 }
                 if(block == BOWSER_BRIDGE && y > 0 && getMapBlock(map, x, y-1) == BOWSER_BRIDGE) {
+                    if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y, map);
+                    else summonEntity(BOWSER, x, y, map);
                     if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y, map);
                     else summonEntity(BOWSER, x, y, map);
                     setMapBlock(map, x, y-1, AIR);

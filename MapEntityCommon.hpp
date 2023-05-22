@@ -5,9 +5,12 @@
 
 #define CHUNK_LEN 32 // The map is split into chunks with dimensions map.height * CHUNK_LEN to avoid memory allocation problems
 #define FIRE_BAR_LENGTH 6
-#define GRAVITY_ACCELERATION 1.0f
-#define ENTITY_SPEED 1.0f
+#define GRAVITY_ACCELERATION 9.81f
+#define ENTITY_SPEED 2.0f
 #define PROJECTILE_LIFE 5.0f
+#define VIEWPORT_WIDTH 30
+#define VIEWPORT_HEIGHT 15
+#define EPS 0.1f
 
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,
