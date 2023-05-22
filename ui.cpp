@@ -21,7 +21,7 @@
 
 #define BACKGROUNDS_NUMBER 25
 #define BLOCKS_NUMBER 41
-#define ENTITIES_NUMBER 40
+#define ENTITIES_NUMBER 42
 
 #include "nuklear.h"
 #include "nuklear_glfw_gl3.h"
