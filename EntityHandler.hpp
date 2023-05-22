@@ -130,7 +130,7 @@ bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta) {
     int direction = entity->velX > 0 ? 1 : -1;
     bool result = true;
     int y = entity->y < 0 ? 0 : floor(entity->y);
-    int x = map->front + map->x - (floor(entity->x) + direction);
+    int x = map->front + map->x + (round(entity->x) + direction);
     while(y < map->map->height){
         if(map->viewport[y][x].type != AIR) {
             result = false;
@@ -142,7 +142,6 @@ bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta) {
 }
 
 void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map, float timeDelta){
-    if(mario->isOnGround && (entity->y > mario->y || mario->y > entity->y + entity->height)) return;
     if(mario->velY > 0 && mario->y > entity->y && mario->x < entity->x && entity->x < mario->x + mario->width){
         if(abs(mario->velX) < AVOIDANCE_VELOCITY){
             if(entity->x < mario->x + mario->width/2 && entity->velX > 0) entity->velX = -entity->velX;
@@ -150,9 +149,10 @@ void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map, float time
         }
         else if(mario->velX * entity->velX > 0) entity->velX = -entity->velX;
     }
-
-    if(entity->x < mario->x && entity->velX < 0) entity->velX = -entity->velX;
-    else if(entity->x > mario->x && entity->velX > 0) entity->velX = -entity->velX;
+    else if(mario->velY <= 0){
+        if(entity->x < mario->x && entity->velX < 0) entity->velX = -entity->velX;
+        else if(entity->x > mario->x && entity->velX > 0) entity->velX = -entity->velX;
+    }
 
     if(isOnLedge(entity, map, timeDelta)) entity->velX = -entity->velX;
 }
@@ -180,7 +180,7 @@ void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
         case 2: // Piranha is going up
             if(timer->timer == 0){
                 entity->velY = 0;
-                entity->y = round(entity->y);
+                entity->y = entity->y;
                 timer->timer = PIRANHA_UPTIME;
                 timer->state = 1;
             }
@@ -188,7 +188,7 @@ void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
         case 3: // Piranha is going down
             if(timer->timer == 0){
                 entity->velY = 0;
-                entity->y = round(entity->y);
+                entity->y = entity->y;
                 timer->timer = PIRANHA_DOWNTIME;
                 timer->state = 0;
             }
@@ -294,7 +294,7 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         }
         itr->isOnGround = true;
         if(itr->isOnGround && getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height)) == AIR) itr->isOnGround = false;
-        if(itr->isOnGround && itr->velY > 0) itr->velY = 0;
+        if(itr->isOnGround && itr->velY > 0 && itr->type != PIRANHA_PLANT) itr->velY = 0;
 
         if(itr->type == KOOPA_PARATROOPA) koopaParatroopaAI(itr);
         if(itr->type == PIRANHA_PLANT) piranhaPlantAI(itr, mario, timeDelta); 
@@ -305,10 +305,12 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         else if(itr->type != MARIO && itr->type != KOOPA_SHELL) smartAI(itr, mario, map, timeDelta);   
 
         if(!itr->isOnGround) entityFall(itr, map);
-
-        moveEntityX(itr, timeDelta);
-        if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX;
-        moveEntityY(itr, timeDelta);
+        
+        if(itr->type != MARIO) {
+            moveEntityX(itr, timeDelta);
+            if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX;
+            moveEntityY(itr, timeDelta);
+        }
 
         itr = itr->next;
     }

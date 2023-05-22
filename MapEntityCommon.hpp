@@ -258,11 +258,13 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
     entity->type = type;
     entity->x = x;
     entity->y = y;
-    if(entity->type == PIRANHA_PLANT) entity->x -= 0.5f;
     setEntityDimensions(entity, type);
     setEntityStartingVelocity(entity, map);
+    entity->y -= entity->height - 1;
     switch(type){
         case PIRANHA_PLANT: {
+            entity->x -= 0.5f;
+            entity->y += entity->height - 1;
             entity->entity = malloc(sizeof(Timer));
             Timer *timer = static_cast<Timer*>(entity->entity);
             timer->timer = 0;
