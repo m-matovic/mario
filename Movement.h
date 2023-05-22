@@ -1,6 +1,7 @@
 #include <cstdint>
 //#include "conio.h"
 #include "MapEntityCommon.hpp"
+#include "MapLoader.hpp"
 typedef struct {
     float x;
     float y;
@@ -19,13 +20,12 @@ bool isLanding(EntityNode *entity, float timeDiff, Map *map){
     if (floorf(entity->y) == floorf(newY)){
         return false;
     } else{
-        Block nextL = getMapBlock(map, (int)floorf(entity->x), (int)ceilf(newY));
-        Block nextR = getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(newY));
-        if (nextL.type == AIR and nextR.type == AIR){
-            return false
-        } else{
+        Block nextL = getBlock(getMapBlock(map, (int)floorf(entity->x), (int)ceilf(newY)));
+        Block nextR = getBlock(getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(newY)));
+        if (nextL.type == AIR and nextR.type == AIR)
+            return false;
+        else
             return true;
-        }
     }
 }
 
@@ -59,8 +59,8 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
     }
 
     if (entity->isOnGround){            //Provera da li treba da krenemo da padamo
-        Block nextL = getMapBlock(map, (int)floorf(entity->x), (int)ceilf(entity->y - 1));
-        Block nextR = getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(entity->y - 1));
+        Block nextL = getBlock(getMapBlock(map, (int)floorf(entity->x), (int)ceilf(entity->y - 1)));
+        Block nextR = getBlock(getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(entity->y - 1)));
         if (nextL.type == AIR && nextR.type == AIR){
             entity->isOnGround = false;
         }
