@@ -21,7 +21,7 @@
 
 #define BACKGROUNDS_NUMBER 25
 #define BLOCKS_NUMBER 41
-#define ENTITIES_NUMBER 40
+#define ENTITIES_NUMBER 42
 
 #include "nuklear.h"
 #include "nuklear_glfw_gl3.h"
@@ -33,7 +33,6 @@
 
 GLFWwindow *window;
 struct nk_glfw glfw = {0};
-/* struct nk_context *context; */
 struct nk_image backgrounds[BACKGROUNDS_NUMBER];
 struct nk_image blocks[BLOCKS_NUMBER];
 struct nk_image entities_right[ENTITIES_NUMBER];
@@ -248,6 +247,11 @@ void draw_entity(int type, int dir, int x, int y)
         sprite = &entities_left[type*2 + (time_of_frame.tv_nsec/125000000 % 2)];
 
     nk_draw_image(out, nk_rect(x, y, entity_widths[type*2], entity_heights[type*2]), sprite, nk_rgba(255, 255, 255, 255));
+}
+
+int key_down(int keycode)
+{
+    return glfw.ctx.input.keyboard.keys[keycode].down;
 }
 
 void status(int score, int coins, char *world, int time, int lives)

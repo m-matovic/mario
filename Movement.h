@@ -1,6 +1,7 @@
 #include <cstdint>
 //#include "conio.h"
 #include "MapEntityCommon.hpp"
+#include "MapLoader.hpp"
 typedef struct {
     float x;
     float y;
@@ -11,17 +12,79 @@ typedef struct {
 } Mario;
 
 #define MAX_MOVE_SPEED  7
+#define ENTITY_MOVE_SPEED 3
 
-void moveEntityX(EntityNode *entity, float timeDiff){
-    if (entity->velX != 0){
-        entity->x += entity->velX * timeDiff;
+
+bool isLanding(EntityNode *entity, float timeDiff, Map *map){
+    float newY = entity->y + timeDiff* entity->velY;
+    if (floorf(entity->y) == floorf(newY)){
+        return false;
+    } else{
+        Block nextL = getBlock(getMapBlock(map, (int)floorf(entity->x), (int)ceilf(newY)));
+        Block nextR = getBlock(getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(newY)));
+        if (nextL.type == AIR and nextR.type == AIR)
+            return false;
+        else
+            return true;
     }
 }
 
-void moveEntityY(EntityNode *entity, float timeDiff){
-    if (entity->velY != 0){
-        entity->y += entity->velY * timeDiff;
+void moveEntity(EntityNode *entity, float timeDiff, Map *map){
+    if (entity->velX != 0){
+        entity->x += entity->velX * timeDiff;
     }
+    if (!entity->isOnGround){
+        if (!isLanding(entity, timeDiff, map)){
+            entity->y += entity->velY * timeDiff;
+            entity->velY += entity->accY;
+        } else{
+            entity->y = floorf(entity->y) + 1;
+            entity->velY = 0;
+            entity->isOnGround = true;
+        }
+    }                                   //Kretanje kao i provera da li smo sleteli
+
+    if (entity->type == MARIO){         //Promena brzine za Mario i ostale entitete
+        if (entity->accX > 0 && entity->velX < MAX_MOVE_SPEED){
+            entity->velX += entity->accX;
+        } else if (entity->accX < 0 && entity->velX > -MAX_MOVE_SPEED){
+            entity->velX += entity->accX;
+        }
+    } else{
+        if (entity->accX > 0 && entity->velX < ENTITY_MOVE_SPEED){
+            entity->velX += entity->accX;
+        } else if (entity->accX < 0 && entity->velX > -MAX_MOVE_SPEED){
+            entity->velX += entity->accX;
+        }
+    }
+
+    if (entity->isOnGround){            //Provera da li treba da krenemo da padamo
+        Block nextL = getBlock(getMapBlock(map, (int)floorf(entity->x), (int)ceilf(entity->y - 1)));
+        Block nextR = getBlock(getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(entity->y - 1)));
+        if (nextL.type == AIR && nextR.type == AIR){
+            entity->isOnGround = false;
+        }
+    }
+}
+
+
+
+void stopMario(EntityNode *mario, float timeDiff){
+    if (mario->accX * mario->velX > 0){
+        mario->accX = -mario->accX;
+    }
+    mario->velX += mario->accX;
+    if (mario->accX * mario->velX > 0){
+        mario->accX = 0;
+        mario->velX = 0;
+    } else{
+        mario->x += mario->velX * timeDiff;
+    }
+}
+
+void turnAroundEntity(EntityNode *entity){
+    entity->velX = 0;
+    entity->accX = -entity->accX;
 }
 
 void moveMario(Mario *mario, float timeDiff){
@@ -42,16 +105,16 @@ void moveMario(Mario *mario, float timeDiff){
     }
 }
 
-void reduceSpeed(Mario *mario){
-    if (mario->xSpeed > 0){
-        mario->xSpeed -= 0.5;
-        if(mario->xSpeed < 0){
-            mario->xSpeed = 0;
+void reduceSpeed(EntityNode *mario){
+    if (mario->velX > 0){
+        mario->velX -= 0.5;
+        if(mario->velX < 0){
+            mario->velX = 0;
         }
-    } else if (mario->xSpeed < 0){
-        mario->xSpeed += 0.5;
-        if (mario->xSpeed > 0){
-            mario->xSpeed = 0;
+    } else if (mario->velX < 0){
+        mario->velX += 0.5;
+        if (mario->velX > 0){
+            mario->velX = 0;
         }
     }
 }

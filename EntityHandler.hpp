@@ -327,12 +327,11 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         }
 
         if(!itr->isOnGround) entityFall(itr, map);
-        
-        if(itr->type != MARIO) {
-            moveEntityX(itr, timeDelta);
-            if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX;
-            moveEntityY(itr, timeDelta);
-        }
+
+        /* moveEntityX(itr, timeDelta); */
+        /* if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX; */
+        /* moveEntityY(itr, timeDelta); */
+        moveEntity(itr, timeDelta, map->map);
 
         EntityNode *temp = nullptr;
         if(itr->type == 255 || itr->type == 254) temp = itr;
