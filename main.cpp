@@ -3,38 +3,18 @@
 #include "MapEntityCommon.hpp"
 //#include "Movement.h"
 #include "sys/time.h"
+/* #include "nuklear_glfw_gl3.h" */
 #include "ui.h"
 
 static int score = 0;
 static int coins = 0;
 static int lives = 3;
 
+enum keys {UP = 10, DOWN, LEFT, RIGHT};
+
 int main(void)
 {
     MapViewport *map = mapInit("worlds/1");
-    for(int y = 0; y < VIEWPORT_HEIGHT; y++){
-        for(int x = 0; x < VIEWPORT_WIDTH; x++){
-            Block foregroundBlock = map->viewport[(map->yFront + y) % VIEWPORT_HEIGHT][(map->front + x) % VIEWPORT_WIDTH];
-            int xCord = map->y + y; //apsolutne x i y koordinate
-            int yCord = map->x + x;
-            int backgroundBlokc = getBackgroundBlock(map->map, xCord, yCord);
-        }
-    }
-
-    //Iteracija kroz zive entitete
-    /*
-    EntityNode *itr = map->map->entityList;
-    while(itr != nullptr){
-        itr = itr->next;
-    }
-*/
-    /*
-    //Iteracija kroz mrtve entitete
-    EntityNode *itr = map->map->deadEntities;
-    while(itr != nullptr){
-        itr = itr->next;
-    }
-*/
     glfwinit("mario");
 
     int showmenu = 1;
@@ -63,11 +43,13 @@ int main(void)
     mario->velX = 0;
     while(!shouldEnd())
     {
+        printf("%d\n", key_down(UP));
+
         gettimeofday(&current, NULL);
         double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
         double timeDiff = newTime - time + (newTime < time ? 10 : 0);
         time = newTime;
-        printf("%f", timeDiff);
+        /* printf("%f", timeDiff); */
 
         entityTick(map, mario, timeDiff);
 
@@ -104,8 +86,6 @@ int main(void)
 
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
             draw_entity(itr->type, -1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);
-
-        /* Entity directional drawing test */
 
         status(score, coins, "1 # 1", 300 - (time - startTime), lives);
 
