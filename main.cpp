@@ -59,6 +59,8 @@ int main(void)
     gettimeofday(&current, NULL);
     float time = current.tv_sec %10 + current.tv_usec / 1000000;
     float startTime = time;
+
+    EntityNode mario = {3, 3, 1, 0.75, 0, 0, 0.1, -0.1, MARIO, true, NULL, NULL};
     while(!shouldEnd())
     {
         gettimeofday(&current, NULL);
