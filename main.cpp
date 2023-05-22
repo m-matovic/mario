@@ -33,54 +33,55 @@ int main(void)
 
     struct timeval current;
     gettimeofday(&current, NULL);
-    float time = current.tv_sec %10 + current.tv_usec / 1000000;
+    double time = current.tv_sec %10 + (double) current.tv_usec / 1000000;
     float startTime = time;
+
+    EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
+    mario->velX = 0;
     while(!shouldEnd())
     {
         gettimeofday(&current, NULL);
-        float newTime = current.tv_sec %10 + current.tv_usec / 1000000;
-        float timeDiff = newTime - time;
+        double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
+        double timeDiff = newTime - time + (newTime < time ? 10 : 0);
         time = newTime;
-        printf("%f", timeDiff);
 
-        system("cls");
+        entityTick(map, mario, timeDiff);
+
         frminit();
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
             for(int x = 0; x < VIEWPORT_WIDTH; x++)
             {
-                int xCord = map->y + y; //apsolutne x i y koordinate
-                int yCord = map->x + x;
+                int xCord = map->x + x; //apsolutne x i y koordinate
+                int yCord = map->y + y;
                 int backgroundBlock = getBackgroundBlock(map->map, xCord, yCord);
 
                 if(backgroundBlock != 255)
-                    draw_background(backgroundBlock, xCord * 48, yCord * 48);
+                    draw_background(backgroundBlock, x  * 48, y * 48);
             }
         }
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            draw_entity(itr->type, 1, itr->x, itr->y);
+            draw_entity(itr->type, 1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
             for(int x = 0; x < VIEWPORT_WIDTH; x++)
             {
                 Block foregroundBlock = map->viewport[(map->yFront + y) % VIEWPORT_HEIGHT][(map->front + x) % VIEWPORT_WIDTH]; 
-                int xCord = map->y + y; //apsolutne x i y koordinate
-                int yCord = map->x + x;
+                int xCord = map->x + x; //apsolutne x i y koordinate 
+                int yCord = map->y + y;
 
                 if(foregroundBlock.type != 255)
-                    draw_block(foregroundBlock.type, yCord * 48, xCord * 48);
+                    draw_block(foregroundBlock.type, x * 48, y * 48);
             }
         }
 
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
-            draw_entity(itr->type, -1, itr->x, itr->y);
+            draw_entity(itr->type, -1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);
 
         /* Entity directional drawing test */
-        draw_entity(KOOPA_TROOPA, 1, 500, 500);
-        draw_entity(KOOPA_TROOPA, -1, 600, 500);
 
         status(score, coins, "1 # 1", 300 - (time - startTime), lives);
 

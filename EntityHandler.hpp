@@ -1,10 +1,10 @@
 #ifndef ENTITY_HANDLER_H
 #define ENTITY_HANDLER_H
 
-//#include "Movement.h"
+#include "Movement.h"
 #include <cmath>
 #include <cstdlib>
-#define TERMINAL_VELOCITY 10.0f
+#define TERMINAL_VELOCITY 15.0f
 #define AVOIDANCE_VELOCITY 1.0f
 #define PIRANHA_RANGE 5.0f
 #define PIRANHA_DOWNTIME 5.0f
@@ -15,7 +15,6 @@
 #define BOWSER_FIRE_COOLDOWN 1.0f
 #define BOWSER_RANGE 10.0f
 #define HAMMER_COUNT 3
-#define GROUND_CLEARANCE 0.25f
 
 void removeEntity(EntityNode *entity, MapViewport *map){
     EntityNode *itr = map->map->deadEntities;
@@ -274,7 +273,13 @@ void platformAI(EntityNode *entity, MapViewport *map){
 void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
     EntityNode *itr = map->map->entityList;
     while(itr != nullptr){
-        if(itr->isOnGround && getMapBlock(map->map, floor(itr->x), floor(itr->y - GROUND_CLEARANCE)) == AIR) itr->isOnGround = false;
+        if(map->x > itr->x || itr->x > map->x + VIEWPORT_WIDTH || itr->type == MARIO) {
+            itr = itr->next;
+            continue;
+        }
+        itr->isOnGround = true;
+        if(itr->isOnGround && getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height)) == AIR) itr->isOnGround = false;
+        if(itr->isOnGround && itr->velY > 0) itr->velY = 0;
 
         if(itr->type == KOOPA_PARATROOPA) koopaParatroopaAI(itr);
         if(itr->type == PIRANHA_PLANT) piranhaPlantAI(itr, mario, timeDelta); 
@@ -284,7 +289,12 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         else if(itr->type == PLATFORM) platformAI(itr, map);
         else if(itr->type != MARIO) smartAI(itr, mario, map, timeDelta);       
         if(!itr->isOnGround) entityFall(itr, map);
-        itr->next;
+
+        moveEntityX(itr, timeDelta);
+        if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX;
+        moveEntityY(itr, timeDelta);
+
+        itr = itr->next;
     }
 
     itr = map->map->deadEntities;
