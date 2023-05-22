@@ -3,7 +3,6 @@
 #include "MapEntityCommon.hpp"
 //#include "Movement.h"
 #include "sys/time.h"
-/* #include "nuklear_glfw_gl3.h" */
 #include "ui.h"
 
 static int score = 0;
@@ -43,13 +42,15 @@ int main(void)
     mario->velX = 0;
     while(!shouldEnd())
     {
-        printf("%d\n", key_down(UP));
+        /* Check for input example */
+        if(key_down(UP));
+            /* Handle up key pressed */
 
         gettimeofday(&current, NULL);
         double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
         double timeDiff = newTime - time + (newTime < time ? 10 : 0);
         time = newTime;
-        /* printf("%f", timeDiff); */
+        printf("%f", timeDiff);
 
         entityTick(map, mario, timeDiff);
 
