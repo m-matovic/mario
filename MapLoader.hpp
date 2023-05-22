@@ -16,6 +16,7 @@ using namespace std;
 #define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
+#define SCORE_COUNT 10
 
 
 Block getBlock(unsigned char blockCode) // Convert a block code to a block
