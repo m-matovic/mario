@@ -305,7 +305,8 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
             continue;
         }
         itr->isOnGround = true;
-        if(itr->isOnGround && (ceil(itr->y + itr->height) >= VIEWPORT_HEIGHT || getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height)) == AIR)) itr->isOnGround = false;
+        if(itr->isOnGround && (ceil(itr->y + itr->height) >= VIEWPORT_HEIGHT || 
+        getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height)) == AIR && getMapBlock(map->map, floor(itr->x + itr->width), floor(itr->y + itr->height)) == AIR)) itr->isOnGround = false;
         if(itr->isOnGround && itr->velY > 0 && itr->type != PIRANHA_PLANT) {
             itr->velY = 0;
             itr->accY = 0;
@@ -328,9 +329,7 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
 
         if(!itr->isOnGround) entityFall(itr, map);
 
-        /* moveEntityX(itr, timeDelta); */
-        /* if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX; */
-        /* moveEntityY(itr, timeDelta); */
+        if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX; 
         moveEntity(itr, timeDelta, map->map);
 
         EntityNode *temp = nullptr;
