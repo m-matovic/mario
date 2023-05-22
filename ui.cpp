@@ -19,9 +19,9 @@
 #define WINDOW_WIDTH 1280
 #define SPRITE_SIZE 48
 
-#define BACKGROUNDS_NUMBER 25
+#define BACKGROUNDS_NUMBER 28
 #define BLOCKS_NUMBER 41
-#define ENTITIES_NUMBER 42
+#define ENTITIES_NUMBER 58
 
 #include "nuklear.h"
 #include "nuklear_glfw_gl3.h"
