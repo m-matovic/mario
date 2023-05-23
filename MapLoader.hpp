@@ -101,44 +101,48 @@ MapViewport* getViewport(Map *map) // Get a viewport of a map, which displays al
     return mapViewport;
 }
 
-void shiftLeft(MapViewport* viewport) // Shift a viewport by one block to the left
+bool shiftLeft(MapViewport* viewport) // Shift a viewport by one block to the left
 {
-    if(viewport->x <= 0) return;
+    if(viewport->x <= 0) return false;
     viewport->x--;
     viewport->front--;
     if(viewport->front < 0) viewport->front = VIEWPORT_WIDTH-1;
     for(int y = viewport->y; y < VIEWPORT_HEIGHT + viewport->y; y++)
         viewport->viewport[(viewport->yFront + y) % VIEWPORT_HEIGHT][viewport->front] = getBlock(getMapBlock(viewport->map, viewport->x, viewport->y + y));
+    return true;
 }
 
-void shiftRight(MapViewport* viewport) // Shift a viewport by one block to the right
+bool shiftRight(MapViewport* viewport) // Shift a viewport by one block to the right
 {
-    if(viewport->x + VIEWPORT_WIDTH >= viewport->map->length) return;
+    if(viewport->x + VIEWPORT_WIDTH >= viewport->map->length) return false;
     for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         viewport->viewport[(viewport->yFront + y) % VIEWPORT_HEIGHT][viewport->front] = getBlock(getMapBlock(viewport->map, viewport->x + VIEWPORT_WIDTH, viewport->y + y));
     viewport->x++;
     viewport->front++;
     if(viewport->front >= VIEWPORT_WIDTH) viewport->front = 0;
+    return true;
 }
 
-void shiftUp(MapViewport* viewport) // Shift a viewport by one block upwards
+bool shiftUp(MapViewport* viewport) // Shift a viewport by one block upwards
 {
-    if(viewport->y <= 0) return;
+    if(viewport->y <= 0) return false;
     viewport->y--;
     viewport->yFront--;
     if(viewport->yFront < 0) viewport->yFront = VIEWPORT_HEIGHT-1;
     for(int x = 0; x < VIEWPORT_WIDTH; x++)
         viewport->viewport[viewport->yFront][(viewport->front + x) % VIEWPORT_WIDTH] = getBlock(getMapBlock(viewport->map, viewport->x + x, viewport->y));
+    return true;
 }
 
-void shiftDown(MapViewport* viewport) // Shift a viewport by one block downwards
+bool shiftDown(MapViewport* viewport) // Shift a viewport by one block downwards
 {
-    if(viewport->y + VIEWPORT_HEIGHT >= viewport->map->height) return;
+    if(viewport->y + VIEWPORT_HEIGHT >= viewport->map->height) return false;
     for(int x = 0; x < VIEWPORT_WIDTH; x++)
         viewport->viewport[viewport->yFront][(viewport->front + x) % VIEWPORT_WIDTH] = getBlock(getMapBlock(viewport->map, viewport->x + x, viewport->y+VIEWPORT_HEIGHT));
     viewport->y++;
     viewport->yFront++;
     if(viewport->yFront >= VIEWPORT_HEIGHT) viewport->yFront = 0;
+    return true;
 }
 
 Map* loadMap(string location, bool background, Map* loadedMap = nullptr){

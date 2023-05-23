@@ -5,6 +5,9 @@
 #include "sys/time.h"
 #include "ui.h"
 
+#define SCREEN_MARGIN 5
+#define LEFT_OFFSET 2.5
+
 static int score = 0;
 static int coins = 0;
 static int lives = 3;
@@ -14,7 +17,7 @@ enum states { STANDING = 20, WALKING, JUMPING, POLE, LARGE_STANDING, LARGE_WALKI
 
 int main(void)
 {
-    MapViewport *map = mapInit("worlds/4");
+    MapViewport *map = mapInit("worlds/1");
     glfwinit("mario");
 
     int showmenu = 1;
@@ -41,23 +44,42 @@ int main(void)
 
     EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
     mario->velX = 0;
-    int lastTime = floor(time);
+    double shifter = 0;
+    double lastShifter = 0;
     while(!shouldEnd())
     {
         /* Check for input example */
         if(key_down(UP));
             /* Handle up key pressed */
 
+        float speed = 10.0f;
+        if(key_down(LEFT)) mario->velX = -speed;
+        else if(key_down(RIGHT)) mario->velX = speed;
+        else mario->velX = 0;
+
         gettimeofday(&current, NULL);
         double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
         double timeDiff = newTime - time + (newTime < time ? 10 : 0);
         time = newTime;
-        if(lastTime != floor(time)){
-            lastTime = floor(time);
-            shiftRight(map);
-        }
 
         entityTick(map, mario, timeDiff);
+
+        if(mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1 - shifter > 0 && shifter < mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1) shifter = mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1;
+        if(mario->x - map->x - SCREEN_MARGIN - 1 - shifter < 0 && shifter > mario->x - map->x - SCREEN_MARGIN - 1) shifter = mario->x - map->x - SCREEN_MARGIN - 1;
+
+
+        if(shifter > 1) {
+            if(shiftRight(map)) shifter -= 1;
+        }
+        else if(shifter < -1) {
+            if(shiftLeft(map)) shifter += 1;;
+        }
+        if(shifter < -LEFT_OFFSET) shifter = -LEFT_OFFSET;
+        if(shifter > 1) shifter = 1;
+
+        if(mario->x < 0) mario->x = 0;
+        if(shifter != lastShifter) cout << shifter << endl;
+        lastShifter = shifter;
 
         frminit();
 
@@ -70,12 +92,12 @@ int main(void)
                 int backgroundBlock = getBackgroundBlock(map->map, xCord, yCord);
 
                 if(backgroundBlock != 255)
-                    draw_background(backgroundBlock, x  * 48, y * 48);
+                    draw_background(backgroundBlock, (x - LEFT_OFFSET - shifter)  * 48, y * 48);
             }
         }
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            if(itr->type != FIRE_BAR) draw_entity(itr->type, 1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type != FIRE_BAR) draw_entity(itr->type, 1, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
@@ -85,16 +107,17 @@ int main(void)
                 int xCord = map->x + x; //apsolutne x i y koordinate
                 int yCord = map->y + y;
 
-                if(foregroundBlock.type != 255)
-                    draw_block(foregroundBlock.type, x * 48, y * 48);
+                if(foregroundBlock.type != 255) {
+                    draw_block(foregroundBlock.type, (x - LEFT_OFFSET - shifter) * 48, y * 48);
+                }
             }
         }
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            if(itr->type == FIRE_BAR) draw_entity(itr->type, 1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type == FIRE_BAR) draw_entity(itr->type, 1, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
-            draw_entity(itr->type, -1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);
+            draw_entity(itr->type, -1, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         status(score, coins, "1 # 1", 300 - (time - startTime), lives);
 
