@@ -300,7 +300,7 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
     int AIless[] = {MARIO, MUSHROOM_ENTITY, STAR_ENTITY, FIREFLOWER, KOOPA_SHELL};
 
     while(itr != nullptr){
-        if(map->x - RENDER_DISTANCE > itr->x || itr->x > map->x + VIEWPORT_WIDTH + RENDER_DISTANCE || itr->type == MARIO) {
+        if((map->x - RENDER_DISTANCE > itr->x || itr->x > map->x + VIEWPORT_WIDTH + RENDER_DISTANCE || itr->type == MARIO) && itr->type != PLATFORM && itr->type != FIRE_BAR) {
             itr = itr->next;
             continue;
         }

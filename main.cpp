@@ -14,7 +14,7 @@ enum states { STANDING = 20, WALKING, JUMPING, POLE, LARGE_STANDING, LARGE_WALKI
 
 int main(void)
 {
-    MapViewport *map = mapInit("worlds/1");
+    MapViewport *map = mapInit("worlds/4");
     glfwinit("mario");
 
     int showmenu = 1;
@@ -41,6 +41,7 @@ int main(void)
 
     EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
     mario->velX = 0;
+    int lastTime = floor(time);
     while(!shouldEnd())
     {
         /* Check for input example */
@@ -51,7 +52,10 @@ int main(void)
         double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
         double timeDiff = newTime - time + (newTime < time ? 10 : 0);
         time = newTime;
-        printf("%f", timeDiff);
+        if(lastTime != floor(time)){
+            lastTime = floor(time);
+            shiftRight(map);
+        }
 
         entityTick(map, mario, timeDiff);
 
@@ -71,7 +75,7 @@ int main(void)
         }
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            draw_entity(itr->type, 1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type != FIRE_BAR) draw_entity(itr->type, 1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
@@ -85,6 +89,9 @@ int main(void)
                     draw_block(foregroundBlock.type, x * 48, y * 48);
             }
         }
+
+        for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
+            if(itr->type == FIRE_BAR) draw_entity(itr->type, 1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);
 
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
             draw_entity(itr->type, -1, (itr->x - map->x) * 48, (itr->y - map->y) * 48);

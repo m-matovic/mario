@@ -355,8 +355,7 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
             platform = static_cast<Platform*> (itr->entity);
             if(platform->master == true) goto endOfIter;
 
-            for(int i = 0; i < platforms.size(); i++) {
-                cout << round(itr->x) << ":" << round(platforms[i]->x) << endl;
+            for(int i = 0; i < platforms.size(); i++) 
                 if(itr->velX * platforms[i]->velX > 0 && round(itr->x) + 1 == round(platforms[i]->x)){
                     if(itr->velX > 0){
                         platform->next = platforms[i];
@@ -374,7 +373,6 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
                         goto endOfIter;
                     }
                 }
-            }
 
             platform->master = true;
             platforms.push_back(itr);
