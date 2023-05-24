@@ -18,23 +18,15 @@
 #define RENDER_DISTANCE 10
 
 void removeEntity(EntityNode *entity, MapViewport *map){
-    EntityNode *itr = map->map->deadEntities;
-    if(itr == entity) map->map->deadEntities = entity->next;
-    else {
-        while(itr->next != entity && itr->next != nullptr) itr = itr->next;
-        if(itr->next != nullptr) itr->next = entity->next;
-    }
+    if(map->map->deadEntities == entity) map->map->deadEntities = entity->next;
+    else entity->prev->next = entity->next;
     if(entity->entity != NULL) free(entity->entity);
     free(entity);
 }
 
 void removeAliveEntity(EntityNode *entity, MapViewport *map){
-    EntityNode *itr = map->map->entityList;
-    if(itr == entity) map->map->entityList = entity->next;
-    else {
-        while(itr->next != entity && itr->next != nullptr) itr = itr->next;
-        if(itr->next != nullptr) itr->next = entity->next;
-    }
+    if(map->map->entityList == entity) map->map->entityList = entity->next;
+    else entity->prev->next = entity->next;
     if(entity->entity != NULL) free(entity->entity);
     free(entity);
 }
@@ -56,15 +48,10 @@ void clearEntityList(MapViewport *map){
 }
 
 void killEntity(EntityNode *entity, MapViewport *map){
-    if(entity == map->map->entityList) {
-        map->map->entityList = entity->next;
-        addDeadEntity(entity, map);
-        return;
-    }
-
-    EntityNode *itr = map->map->entityList;
-    while(itr->next != entity && itr != nullptr) itr = itr->next;
-    itr->next = entity->next;
+    if(entity == map->map->entityList) map->map->entityList = entity->next;
+    else entity->prev->next = entity->next;
+    addDeadEntity(entity, map);
+    entity->velY = -JUMP_VELOCITY/2;
 }
 
 void killMario(EntityNode *mario){
@@ -102,8 +89,8 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
     }
 
     if((entity1->type == KOOPA_SHELL) != (entity2->type == KOOPA_SHELL)){
-        if(entity1->type == KOOPA_SHELL) entity2->type = 254; 
-        else entity1->type = 254;
+        if(entity1->type == KOOPA_SHELL) entity2->timer = -20; 
+        else entity1->timer = -20;
         return;
     }
 
@@ -122,7 +109,7 @@ void entityFall(EntityNode *entity, MapViewport *map){
     }
     else if(entity->velY < TERMINAL_VELOCITY) entity->accY = GRAVITY_ACCELERATION;
 
-    if(entity->y + entity->height >= map->map->height) entity->type = 254;
+    if(entity->y + entity->height >= map->map->height) entity->timer = -20;
 }
 
 bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta) {
@@ -143,7 +130,7 @@ bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta) {
 
 void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map, float timeDelta){
     entity->timer -= timeDelta;
-    if(entity->timer < 0) entity->timer = 0;
+    if(entity->timer < 0 && entity->timer > -20) entity->timer = 0;
 
     if(mario->velY > 0 && mario->y > entity->y && mario->x < entity->x && entity->x < mario->x + mario->width){
         if(abs(mario->velX) < AVOIDANCE_VELOCITY){
@@ -166,7 +153,7 @@ void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map, float time
 void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
     State *state = static_cast<State*>(entity->entity);
     entity->timer -= timeDelta;
-    if(entity->timer < 0) entity->timer = 0;
+    if(entity->timer < 0 && entity->timer > -20) entity->timer = 0;
 
     switch(state->state){
         case 0: // Piranha plant is hidden 
@@ -238,7 +225,7 @@ void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewpor
     }
 
     entity->timer -= timeDelta;
-    if(entity->timer < 0) entity->timer = 0;
+    if(entity->timer < 0 && entity->timer > -20) entity->timer = 0;
 
     switch(state->state){
         case 0: //Ready to fire
@@ -300,10 +287,11 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
     int AIless[] = {MARIO, MUSHROOM_ENTITY, STAR_ENTITY, FIREFLOWER, KOOPA_SHELL};
 
     while(itr != nullptr){
-        if((map->x - RENDER_DISTANCE > itr->x || itr->x > map->x + VIEWPORT_WIDTH + RENDER_DISTANCE || itr->type == MARIO) && itr->type != PLATFORM && itr->type != FIRE_BAR) {
+        if((map->x - RENDER_DISTANCE > itr->x || itr->x > map->x + VIEWPORT_WIDTH + RENDER_DISTANCE /* || itr->type == MARIO*/) && itr->type != PLATFORM && itr->type != FIRE_BAR) {
             itr = itr->next;
             continue;
         }
+        if(itr->type != MARIO && itr->x + EPS >= mario->x && itr->x - EPS <= mario->x && itr->y + EPS >= mario->y && itr->y - EPS <= mario->y) itr->timer = -20;
         itr->isOnGround = true;
         if(itr->isOnGround && (ceil(itr->y + itr->height) >= VIEWPORT_HEIGHT || 
         getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height)) == AIR && getMapBlock(map->map, floor(itr->x + itr->width), floor(itr->y + itr->height)) == AIR)) itr->isOnGround = false;
@@ -333,18 +321,25 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         moveEntity(itr, timeDelta, map->map);
 
         EntityNode *temp = nullptr;
-        if(itr->type == 255 || itr->type == 254) temp = itr;
+        if(itr->type == 255 || itr->timer <= -20) temp = itr;
         itr = itr->next;
         if(temp != nullptr) {
             if(temp->type == 255) removeAliveEntity(temp, map);
-            else if(temp->type == 254) killEntity(temp, map);
+            else if(temp->timer <= -20) killEntity(temp, map);
         }
     }
 
     itr = map->map->deadEntities;
     while(itr != nullptr) {
-        if(itr->y > map->map->height) removeEntity(itr, map);
+        itr->isOnGround = false;
+        itr->accY = GRAVITY_ACCELERATION;
+        moveEntity(itr, timeDelta, map->map);
+        EntityNode *prev = itr;
         itr = itr->next;
+        if(prev->y + prev->height + EPS >= map->map->height) {
+            if(prev->type != MARIO) removeEntity(prev, map);
+            else prev->timer = -30;
+        }
     }
 }
 

@@ -61,6 +61,7 @@ typedef struct EntityNode {
     bool isOnGround;
     void* entity;
     EntityNode *next;
+    EntityNode *prev;
 } EntityNode;
 
 typedef struct {
@@ -215,9 +216,12 @@ void entityToBlockCollision(EntityNode *entity){
 }
 
 void addDeadEntity(EntityNode *entity, MapViewport *map){
+    for(EntityNode *itr = map->map->deadEntities; itr != nullptr; itr = itr->next) if(itr == entity) return;
     entity->next = map->map->deadEntities;
+    entity->prev = nullptr;
+    if(map->map->deadEntities != nullptr) map->map->deadEntities->prev = entity;
     map->map->deadEntities = entity;
-    entity->velY = GRAVITY_ACCELERATION;
+    entity->accY = GRAVITY_ACCELERATION;
     entity->velX = 0;
 }
 
@@ -250,6 +254,8 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
 
     EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
     entity->next = map->entityList;
+    entity->prev = nullptr;
+    if(map->entityList != nullptr) map->entityList->prev = entity;
     map->entityList = entity;
 
     entity->type = type;
@@ -257,6 +263,7 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
     entity->y = y;
     setEntityDimensions(entity, type);
     setEntityStartingVelocity(entity, map);
+    entity->timer = 0;
     if(entity->height > 1) entity->y -= entity->height - 1;
     switch(type){
         case PIRANHA_PLANT: {
