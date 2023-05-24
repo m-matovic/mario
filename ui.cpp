@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <GL/glew.h>
 #include <time.h>
 
@@ -23,6 +24,8 @@
 #define BLOCKS_NUMBER 41
 #define ENTITIES_NUMBER 58
 
+#define HIGHSCORE_NUMBER 10
+
 #include "nuklear.h"
 #include "nuklear_glfw_gl3.h"
 
@@ -39,8 +42,20 @@ struct nk_image entities_right[ENTITIES_NUMBER];
 struct nk_image entities_left[ENTITIES_NUMBER];
 int entity_widths[ENTITIES_NUMBER];
 int entity_heights[ENTITIES_NUMBER];
+int showscores = 0;
+int *highscores[HIGHSCORE_NUMBER];
 
 struct timespec time_of_frame;
+
+void load_scores(void)
+{
+    FILE *fp = fopen("highscores.txt", "r");
+
+    for(int i = 0; i < HIGHSCORE_NUMBER; i++)
+        fscanf(fp, "%d\n", &highscores[i]);
+
+    fclose(fp);
+}
 
 static void error_callback(int e, const char *d)
 {
@@ -91,6 +106,8 @@ void glfwinit(const char *wintag)
     glfw.ctx.style.button.active = nk_style_item_color(nk_rgba(0, 0, 0, 0));
     glfw.ctx.style.window.spacing = nk_vec2(0, 0);
     glfw.ctx.style.window.padding = nk_vec2(0, 0);
+
+    load_scores();
 }
 
 int shouldEnd(void)
@@ -110,18 +127,45 @@ void frminit(void)
 
 int menu(void)
 {
-    nk_layout_row_dynamic(&glfw.ctx, 200, 1);
-
-    nk_layout_row_dynamic(&glfw.ctx, 80, 1);
-    if(nk_button_label(&glfw.ctx, "Play"))
-        return 0;
-
-    nk_layout_row_dynamic(&glfw.ctx, 80, 1);
-    if(nk_button_label(&glfw.ctx, "Quit"))
+    if(!showscores)
     {
-        nk_end(&glfw.ctx);
-        glfwend();
-        exit(0);
+        nk_layout_row_dynamic(&glfw.ctx, 240, 1);
+
+        nk_layout_row_dynamic(&glfw.ctx, 80, 1);
+        if(nk_button_label(&glfw.ctx, "Play"))
+            return 0;
+
+        nk_layout_row_dynamic(&glfw.ctx, 80, 1);
+        if(nk_button_label(&glfw.ctx, "Highscores"))
+            showscores = 1;
+
+        nk_layout_row_dynamic(&glfw.ctx, 80, 1);
+        if(nk_button_label(&glfw.ctx, "Quit"))
+        {
+            nk_end(&glfw.ctx);
+            glfwend();
+            exit(0);
+        }
+    }
+    else
+    {
+        nk_layout_row_dynamic(&glfw.ctx, 80, 1);
+
+        char *buffer = (char *)malloc(BUFSIZ);
+
+        for(int i = 0; i < HIGHSCORE_NUMBER; i++)
+        {
+            sprintf(buffer, "#%d. %d", i + 1, highscores[i]);
+            nk_layout_row_dynamic(&glfw.ctx, 50, 1);
+            if(nk_button_label(&glfw.ctx, buffer));
+        }
+
+        nk_layout_row_dynamic(&glfw.ctx, 50, 1);
+        nk_layout_row_dynamic(&glfw.ctx, 50, 1);
+        if(nk_button_label(&glfw.ctx, "Back"))
+            showscores = 0;
+
+        free(buffer);
     }
 
     return 1;
