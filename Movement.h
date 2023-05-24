@@ -1,7 +1,8 @@
 #include <cstdint>
 //#include "conio.h"
 #include "MapEntityCommon.hpp"
-#include "MapLoader.hpp"
+#include <cmath>
+//#include "MapLoader.hpp"
 typedef struct {
     float x;
     float y;
@@ -33,7 +34,7 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
     if (entity->velX != 0){
         entity->x += entity->velX * timeDiff;
     }
-    if (!entity->isOnGround){
+    //if (!entity->isOnGround){
         // if (!isLanding(entity, timeDiff, map)){
             entity->y += entity->velY * timeDiff;
             entity->velY += entity->accY * timeDiff;
@@ -42,7 +43,7 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
         //     entity->velY = 0;
         //     entity->isOnGround = true;
         // }
-    }                                   //Kretanje kao i provera da li smo sleteli
+    //}                                   //Kretanje kao i provera da li smo sleteli
 
     if (entity->type == MARIO){         //Promena brzine za Mario i ostale entitete
         if (entity->accX > 0 && entity->velX < MAX_MOVE_SPEED){

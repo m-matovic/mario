@@ -1,9 +1,8 @@
-#ifndef ENTITY_HANDLER_H
-#define ENTITY_HANDLER_H
-
 #include "Movement.h"
 #include <cmath>
 #include <cstdlib>
+#include "MapEntityCommon.hpp"
+
 #define TERMINAL_VELOCITY 15.0f
 #define AVOIDANCE_VELOCITY 1.0f
 #define PIRANHA_RANGE 5.0f
@@ -16,6 +15,171 @@
 #define BOWSER_RANGE 20.0f
 #define HAMMER_COUNT 3
 #define RENDER_DISTANCE 10
+
+void setEntityDimensions(EntityNode *entity, int type){
+    switch(type){
+        case PLATFORM:
+            entity->width = 1.0f;
+            entity->height = 0.5f;
+            break;
+        case HAMMER_BROTHER:
+            entity->width = 1.0f;
+            entity->height = 2.0f;
+            break;
+        case FIRE_BAR:
+            entity->width = 0.5f;
+            entity->height = 0.5f;
+            break;
+        case HAMMER:
+            entity->width = 0.5f;
+            entity->height = 1.0f;
+            break;
+        case FIREBALL:
+            entity->width = 1.5f;
+            entity->height = 0.5f;
+            break;
+        case PIRANHA_PLANT:
+        case BLOOBER:
+        case KOOPA_TROOPA:
+        case KOOPA_PARATROOPA:
+        case LAKITU:
+            entity->height = 1.5f;
+            entity->width = 1.0f;
+            break;
+        case BOWSER:
+            entity->height = 2.0f;
+            entity->width = 2.0f;
+            break;
+        default:
+            entity->height = 1.0f;
+            entity->width = 1.0f;
+            break;
+    }
+}
+
+void setEntityStartingVelocity(EntityNode *entity, Map *map) {
+    entity->velX = -ENTITY_SPEED;
+    entity->accX = 0;
+    entity->velY = 0;
+    if(entity->type == PLATFORM || entity->type == PIRANHA_PLANT || entity->type == FIRE_BAR) entity->velX = 0;
+    entity->isOnGround = true;
+    entity->accY = 0;
+}
+
+void entityToBlockCollision(EntityNode *entity){
+    if(entity->type == PLATFORM){
+        if(static_cast<Platform*> (entity->entity)->master){
+            static_cast<Platform*> (entity->entity)->master = false;
+            if(entity->velX < 0){
+                EntityNode *itr = entity;
+                while(static_cast<Platform*> (itr->entity)->next != nullptr){
+                    itr->velX = -itr->velX;
+                    itr = static_cast<Platform*> (itr->entity)->next;
+                }
+                itr->velX = -itr->velX;
+                static_cast<Platform*> (itr->entity)->master = true;
+            }
+            else if(entity->velX > 0){
+                EntityNode *itr = entity;
+                while(static_cast<Platform*> (itr->entity)->prev != nullptr){
+                    itr->velX = -itr->velX;
+                    itr = static_cast<Platform*> (itr->entity)->prev;
+                }
+                itr->velX = -itr->velX;
+                static_cast<Platform*> (itr->entity)->master = true;
+            }
+        }
+    }
+    else entity->velX = -entity->velX;
+}
+
+void addDeadEntity(EntityNode *entity, MapViewport *map){
+    for(EntityNode *itr = map->map->deadEntities; itr != nullptr; itr = itr->next) if(itr == entity) return;
+    entity->next = map->map->deadEntities;
+    entity->prev = nullptr;
+    if(map->map->deadEntities != nullptr) map->map->deadEntities->prev = entity;
+    map->map->deadEntities = entity;
+    entity->accY = GRAVITY_ACCELERATION;
+    entity->velX = 0;
+}
+
+EntityNode* summonEntity(int type, float x, float y, Map *map){
+     if(type == FIRE_BAR){
+        EntityNode *result;
+        for(int i = 0; i < FIRE_BAR_LENGTH; i++){
+            EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
+            entity->next = map->entityList;
+            map->entityList = entity;
+
+            entity->type = type;
+            setEntityDimensions(entity, type);
+            entity->x = x + (1.0f - entity->width) / 2 + i * entity->height;
+            entity->y = y + (1.0f - entity->height) / 2;
+            entity->isOnGround = true;
+            entity->velX = 0;
+            entity->velY = 0;
+            entity->accX = 0;
+            entity->accY = 0;
+        
+            entity->entity = malloc(sizeof(Rotation));
+            Rotation *rotation = static_cast<Rotation*>(entity->entity);
+            rotation->angle = 0;
+            rotation->radius = i * entity->height;
+            result = entity;
+        }
+        return result;
+    }
+
+    EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
+    entity->next = map->entityList;
+    entity->prev = nullptr;
+    if(map->entityList != nullptr) map->entityList->prev = entity;
+    map->entityList = entity;
+
+    entity->type = type;
+    entity->x = x;
+    entity->y = y;
+    setEntityDimensions(entity, type);
+    setEntityStartingVelocity(entity, map);
+    entity->timer = 0;
+    if(entity->height > 1) entity->y -= entity->height - 1;
+    switch(type){
+        case PIRANHA_PLANT: {
+            entity->x -= 0.5f;
+            entity->y += entity->height - 1;
+            entity->entity = malloc(sizeof(State));
+            State *state = static_cast<State*>(entity->entity);
+            entity->timer = 0;
+            state->state = 0;
+            break;
+        }
+        case BOWSER: {
+            entity->entity = malloc(sizeof(State));
+            State *state = static_cast<State*>(entity->entity);
+            entity->timer = 0;
+            state->state = 0;
+            state->direction = false;
+        }
+        case FIREBALL:
+        case HAMMER:
+            {
+            entity->timer = PROJECTILE_LIFE;
+            break;
+        }
+        case PLATFORM:{
+            entity->entity = malloc(sizeof(Platform));
+            Platform *platform = static_cast<Platform*> (entity->entity);
+            platform->master = false;
+            platform->next = nullptr;
+            platform->prev = nullptr;
+            break;
+        }
+        default:
+            entity->entity = nullptr;
+            break;
+        }
+    return entity;
+}
 
 void removeEntity(EntityNode *entity, MapViewport *map){
     if(map->map->deadEntities == entity) map->map->deadEntities = entity->next;
@@ -57,14 +221,6 @@ void killEntity(EntityNode *entity, MapViewport *map){
     entity->velY = -JUMP_VELOCITY/2;
 }
 
-void killMario(EntityNode *mario){
-    return;
-}
-
-void marioPickUp(EntityNode *mario, EntityNode *collectable){
-    return;
-}
-
 void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map){
     EntityNode *mario = nullptr;
     EntityNode *notMario = nullptr;
@@ -83,10 +239,8 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
             case STAR_ENTITY:
             case ONE_UP_ENTITY:
             case FIREFLOWER:
-                marioPickUp(mario, notMario);
                 return;
             default:
-                killMario(mario);
                 return;
         }
     }
@@ -348,5 +502,3 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         }
     }
 }
-
-#endif

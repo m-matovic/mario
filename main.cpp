@@ -1,5 +1,6 @@
 #include <iostream>
 #include <time.h>
+#include <string>
 #include "MapEntityCommon.hpp"
 //#include "Movement.h"
 #include "sys/time.h"
@@ -29,7 +30,7 @@ int main(void)
     }
     
     int world = 1;
-    MapViewport *map = mapInit("worlds/" + to_string(world));
+    MapViewport *map = mapInit("worlds/" + std::to_string(world));
     char worldC[] = {'0', '\0'};
     worldC[0] = world + '0';
 
@@ -38,14 +39,13 @@ int main(void)
     load_blocks();
     load_entities();
 
-    float gameTime = 5;
+    float gameTime = 300;
     struct timeval current;
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
     float startTime = currentTime;
 
     EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
-    summonEntity(PIRANHA_PLANT, 5, 13, map->map);
     mario->velX = 0;
     double shifter = 0;
     int direction = -1;
@@ -70,7 +70,7 @@ int main(void)
         entityTick(map, mario, timeDiff);
         if(mario->timer <= -30 ) {
             freeMap(map);
-            map = mapInit("worlds/" + to_string(world));
+            map = mapInit("worlds/" + std::to_string(world));
             mario = summonEntity(MARIO, 2, 5, map->map);
             shifter = 0;
             lives--;

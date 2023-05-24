@@ -1,7 +1,7 @@
 #ifndef MAP_ENTITY_COMMON_HPP
 #define MAP_ENTITY_COMMON_HPP
 
-#include <cmath>
+#include <iostream>
 
 #define CHUNK_LEN 32 // The map is split into chunks with dimensions map.height * CHUNK_LEN to avoid memory allocation problems
 #define FIRE_BAR_LENGTH 6
@@ -11,6 +11,24 @@
 #define VIEWPORT_WIDTH 30
 #define VIEWPORT_HEIGHT 15
 #define EPS 0.1f
+#define TERMINAL_VELOCITY 15.0f
+#define AVOIDANCE_VELOCITY 1.0f
+#define PIRANHA_RANGE 5.0f
+#define PIRANHA_DOWNTIME 5.0f
+#define PIRANHA_UPTIME 5.0f
+#define JUMP_VELOCITY 8.0f
+#define FIRE_BAR_ANGULAR_VELOCITY 2.0f
+#define BOWSER_HAMMER_COOLDOWN 2.0f
+#define BOWSER_FIRE_COOLDOWN 2.0f
+#define BOWSER_RANGE 20.0f
+#define HAMMER_COUNT 3
+#define RENDER_DISTANCE 10
+#define MAP_HEIGHT 15 // Default map height
+#define BLOCK_BITS 6 // Number of bits needed to encode block types in files
+#define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
+#define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
+#define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
+#define SCORE_COUNT 10
 
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,
@@ -104,224 +122,86 @@ typedef struct {
     Map *map;
 } MapViewport;
 
-unsigned char getMapBlock(Map *map, int x, int y) // Get the block code from the map at coords. (x,y)
-{
-    if(x >= map->length || x < 0) return 255;
-    if(y >= map->height || y < 0) return 255;
+unsigned char getMapBlock(Map *map, int x, int y);
 
-    return map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
-}
+bool setMapBlock(Map *map, int x, int y, unsigned char block);
 
-bool setMapBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the map at coords. (x,y)
-{
-    if(x >= map->length || x < 0) return false;
-    if(y >= map->height || y < 0) return false;
+unsigned char getBackgroundBlock(Map *map, int x, int y);
 
-    map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
-    return true;
-}
+bool setBackgroundBlock(Map *map, int x, int y, unsigned char block);
 
-unsigned char getBackgroundBlock(Map *map, int x, int y) // Get the block code from the background at coords (x,y)
-{
-    if(x >= map->length || x < 0) return 255;
-    if(y >= map->height || y < 0) return 255;
+Block getBlock(unsigned char blockCode);
 
-    return map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
-}
+MapViewport* getViewport(Map *map);
 
-bool setBackgroundBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the background at coords. (x,y)
-{
-    if(x >= map->length || x < 0) return false;
-    if(y >= map->height || y < 0) return false;
+bool shiftLeft(MapViewport* viewport);
 
-    map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
-    return true;
-}
+bool shiftRight(MapViewport* viewport);
 
-void setEntityDimensions(EntityNode *entity, int type){
-    switch(type){
-        case PLATFORM:
-            entity->width = 1.0f;
-            entity->height = 0.5f;
-            break;
-        case HAMMER_BROTHER:
-            entity->width = 1.0f;
-            entity->height = 2.0f;
-            break;
-        case FIRE_BAR:
-            entity->width = 0.5f;
-            entity->height = 0.5f;
-            break;
-        case HAMMER:
-            entity->width = 0.5f;
-            entity->height = 1.0f;
-            break;
-        case FIREBALL:
-            entity->width = 1.5f;
-            entity->height = 0.5f;
-            break;
-        case PIRANHA_PLANT:
-        case BLOOBER:
-        case KOOPA_TROOPA:
-        case KOOPA_PARATROOPA:
-        case LAKITU:
-            entity->height = 1.5f;
-            entity->width = 1.0f;
-            break;
-        case BOWSER:
-            entity->height = 2.0f;
-            entity->width = 2.0f;
-            break;
-        default:
-            entity->height = 1.0f;
-            entity->width = 1.0f;
-            break;
-    }
-}
+bool shiftUp(MapViewport* viewport);
 
-void setEntityStartingVelocity(EntityNode *entity, Map *map) {
-    entity->velX = -ENTITY_SPEED;
-    entity->accX = 0;
-    entity->velY = 0;
-    if(entity->type == PLATFORM || entity->type == PIRANHA_PLANT || entity->type == FIRE_BAR) entity->velX = 0;
-    entity->isOnGround = true;
-    entity->accY = 0;
-}
+bool shiftDown(MapViewport* viewport);
 
-void entityToBlockCollision(EntityNode *entity){
-    if(entity->type == PLATFORM){
-        if(static_cast<Platform*> (entity->entity)->master){
-            static_cast<Platform*> (entity->entity)->master = false;
-            if(entity->velX < 0){
-                EntityNode *itr = entity;
-                while(static_cast<Platform*> (itr->entity)->next != nullptr){
-                    itr->velX = -itr->velX;
-                    itr = static_cast<Platform*> (itr->entity)->next;
-                }
-                itr->velX = -itr->velX;
-                static_cast<Platform*> (itr->entity)->master = true;
-            }
-            else if(entity->velX > 0){
-                EntityNode *itr = entity;
-                while(static_cast<Platform*> (itr->entity)->prev != nullptr){
-                    itr->velX = -itr->velX;
-                    itr = static_cast<Platform*> (itr->entity)->prev;
-                }
-                itr->velX = -itr->velX;
-                static_cast<Platform*> (itr->entity)->master = true;
-            }
-        }
-    }
-    else entity->velX = -entity->velX;
-}
+Map* loadMap(std::string location, bool background, Map* loadedMap);
 
-void addDeadEntity(EntityNode *entity, MapViewport *map){
-    for(EntityNode *itr = map->map->deadEntities; itr != nullptr; itr = itr->next) if(itr == entity) return;
-    entity->next = map->map->deadEntities;
-    entity->prev = nullptr;
-    if(map->map->deadEntities != nullptr) map->map->deadEntities->prev = entity;
-    map->map->deadEntities = entity;
-    entity->accY = GRAVITY_ACCELERATION;
-    entity->velX = 0;
-}
+void saveMap(std::string location, bool background, Map *map);
 
-EntityNode* summonEntity(int type, float x, float y, Map *map){
-    if(type == FIRE_BAR){
-        EntityNode *result;
-        for(int i = 0; i < FIRE_BAR_LENGTH; i++){
-            EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
-            entity->next = map->entityList;
-            map->entityList = entity;
+char printPalletFG(int type);
 
-            entity->type = type;
-            setEntityDimensions(entity, type);
-            entity->x = x + (1.0f - entity->width) / 2 + i * entity->height;
-            entity->y = y + (1.0f - entity->height) / 2;
-            entity->isOnGround = true;
-            entity->velX = 0;
-            entity->velY = 0;
-            entity->accX = 0;
-            entity->accY = 0;
-        
-            entity->entity = malloc(sizeof(Rotation));
-            Rotation *rotation = static_cast<Rotation*>(entity->entity);
-            rotation->angle = 0;
-            rotation->radius = i * entity->height;
-            result = entity;
-        }
-        return result;
-    }
+char printPalletBG(int type);
 
-    EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
-    entity->next = map->entityList;
-    entity->prev = nullptr;
-    if(map->entityList != nullptr) map->entityList->prev = entity;
-    map->entityList = entity;
+MapViewport* mapInit(std::string location);
 
-    entity->type = type;
-    entity->x = x;
-    entity->y = y;
-    setEntityDimensions(entity, type);
-    setEntityStartingVelocity(entity, map);
-    entity->timer = 0;
-    if(entity->height > 1) entity->y -= entity->height - 1;
-    switch(type){
-        case PIRANHA_PLANT: {
-            entity->x -= 0.5f;
-            entity->y += entity->height - 1;
-            entity->entity = malloc(sizeof(State));
-            State *state = static_cast<State*>(entity->entity);
-            entity->timer = 0;
-            state->state = 0;
-            break;
-        }
-        case BOWSER: {
-            entity->entity = malloc(sizeof(State));
-            State *state = static_cast<State*>(entity->entity);
-            entity->timer = 0;
-            state->state = 0;
-            state->direction = false;
-        }
-        case FIREBALL:
-        case HAMMER:
-            {
-            entity->timer = PROJECTILE_LIFE;
-            break;
-        }
-        case PLATFORM:{
-            entity->entity = malloc(sizeof(Platform));
-            Platform *platform = static_cast<Platform*> (entity->entity);
-            platform->master = false;
-            platform->next = nullptr;
-            platform->prev = nullptr;
-            break;
-        }
-        default:
-            entity->entity = nullptr;
-            break;
-        }
-    return entity;
-}
+void mapMaker(std::string location);
 
-#include "EntityHandler.hpp"
-#include "MapLoader.hpp"
+void printMap(MapViewport *map, int blocksPerLine);
 
-void freeMap(MapViewport *map){
-    for(int i = 0; i < VIEWPORT_HEIGHT; i++) free(map->viewport[i]);
-    free(map->viewport);
+int* getScore();
 
-    clearEntityList(map);
-    while(map->map->deadEntities != nullptr) removeEntity(map->map->deadEntities, map);
+void storeScore(int score);
 
-    for(int i = 0; i < map->map->length / CHUNK_LEN + (map->map->length % CHUNK_LEN ? 1 : 0); i++) {
-        free(map->map->map[i]);
-        free(map->map->background[i]);
-    }
-    free(map->map->map);
-    free(map->map->background);
-    free(map->map);
-    free(map);
-}
+void freeMap(MapViewport *map);
 
+void setEntityDimensions(EntityNode *entity, int type);
+
+void setEntityStartingVelocity(EntityNode *entity, Map *map);
+
+void entityToBlockCollision(EntityNode *entity);
+
+void addDeadEntity(EntityNode *entity, MapViewport *map);
+
+EntityNode* summonEntity(int type, float x, float y, Map *map);
+
+void removeEntity(EntityNode *entity, MapViewport *map);
+
+void removeAliveEntity(EntityNode *entity, MapViewport *map);
+
+void clearEntityList(MapViewport *map);
+
+void killEntity(EntityNode *entity, MapViewport *map);
+
+void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map);
+
+void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map);
+
+void entityFall(EntityNode *entity, MapViewport *map);
+
+bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta);
+
+void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map, float timeDelta);
+
+void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta);
+
+void koopaParatroopaAI(EntityNode *entity);
+
+void fireballAI(EntityNode *entity, float timeDelta);
+
+void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewport *map);
+
+void projectileAI(EntityNode *entity, MapViewport *map, float timeDelta);
+
+void platformAI(EntityNode *entity, MapViewport *map);
+
+void entityTick(MapViewport *map, EntityNode *mario, float timeDelta);
 
 #endif

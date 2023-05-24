@@ -1,6 +1,3 @@
-#ifndef MAP_LOADER_H
-#define MAP_LOADER_H
-
 #include <cstdio>
 #include <cstdlib>
 #include <stdexcept>
@@ -8,16 +5,43 @@
 #include <iostream>
 #include <cstring>
 #include <vector>
+#include "MapEntityCommon.hpp"
 
 using namespace std;
 
-#define MAP_HEIGHT 15 // Default map height
-#define BLOCK_BITS 6 // Number of bits needed to encode block types in files
-#define BACKGROUND_BITS 5 // Number of bits needed to encode background block types in files
-#define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
-#define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
-#define SCORE_COUNT 10
+unsigned char getMapBlock(Map *map, int x, int y) // Get the block code from the map at coords. (x,y)
+{
+    if(x >= map->length || x < 0) return 255;
+    if(y >= map->height || y < 0) return 255;
 
+    return map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
+}
+
+bool setMapBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the map at coords. (x,y)
+{
+    if(x >= map->length || x < 0) return false;
+    if(y >= map->height || y < 0) return false;
+
+    map->map[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
+    return true;
+}
+
+unsigned char getBackgroundBlock(Map *map, int x, int y) // Get the block code from the background at coords (x,y)
+{
+    if(x >= map->length || x < 0) return 255;
+    if(y >= map->height || y < 0) return 255;
+
+    return map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y];
+}
+
+bool setBackgroundBlock(Map *map, int x, int y, unsigned char block) // Set the block code in the background at coords. (x,y)
+{
+    if(x >= map->length || x < 0) return false;
+    if(y >= map->height || y < 0) return false;
+
+    map->background[x/CHUNK_LEN][(x % CHUNK_LEN) * map->height + y] = block;
+    return true;
+}
 
 Block getBlock(unsigned char blockCode) // Convert a block code to a block
 {
@@ -840,4 +864,19 @@ void storeScore(int score){
     fclose(file);
 }
 
-#endif
+void freeMap(MapViewport *map){
+    for(int i = 0; i < VIEWPORT_HEIGHT; i++) free(map->viewport[i]);
+    free(map->viewport);
+
+    clearEntityList(map);
+    while(map->map->deadEntities != nullptr) removeEntity(map->map->deadEntities, map);
+
+    for(int i = 0; i < map->map->length / CHUNK_LEN + (map->map->length % CHUNK_LEN ? 1 : 0); i++) {
+        free(map->map->map[i]);
+        free(map->map->background[i]);
+    }
+    free(map->map->map);
+    free(map->map->background);
+    free(map->map);
+    free(map);
+}
