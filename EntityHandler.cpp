@@ -448,8 +448,6 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
             itr = itr->next;
             continue;
         }
-        
-        if(itr->type != MARIO && itr->x + EPS >= mario->x && itr->x - EPS <= mario->x && itr->y + EPS >= mario->y && itr->y - EPS <= mario->y) itr->timer = -20;
         itr->isOnGround = true;
 
         if(itr->isOnGround && (ceil(itr->y + itr->height) >= VIEWPORT_HEIGHT || 
