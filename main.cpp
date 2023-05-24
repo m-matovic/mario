@@ -30,21 +30,22 @@ int main(void)
     
     int world = 1;
     MapViewport *map = mapInit("worlds/" + to_string(world));
+    char worldC[] = {'0', '\0'};
+    worldC[0] = world + '0';
 
     bg_color(97, 133, 248);
     load_backgrounds();
     load_blocks();
     load_entities();
 
-    time_t level_start, current_time;
-    time(&level_start);
-
+    float gameTime = 5;
     struct timeval current;
     gettimeofday(&current, NULL);
-    double time = current.tv_sec %10 + (double) current.tv_usec / 1000000;
-    float startTime = time;
+    double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
+    float startTime = currentTime;
 
     EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
+    summonEntity(PIRANHA_PLANT, 5, 13, map->map);
     mario->velX = 0;
     double shifter = 0;
     while(!shouldEnd())
@@ -60,18 +61,21 @@ int main(void)
 
         gettimeofday(&current, NULL);
         double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
-        double timeDiff = newTime - time + (newTime < time ? 10 : 0);
-        time = newTime;
+        double timeDiff = newTime - currentTime + (newTime < currentTime ? 10 : 0);
+        currentTime = newTime;
+        gameTime -= timeDiff;
 
         entityTick(map, mario, timeDiff);
-        if(mario->timer <= -30) {
+        if(mario->timer <= -30 ) {
             freeMap(map);
             map = mapInit("worlds/" + to_string(world));
             mario = summonEntity(MARIO, 2, 5, map->map);
             shifter = 0;
             lives--;
+            gameTime = 300;
             if(lives == 0) break;
         }
+        if(gameTime <= 0) mario->timer = -20;
 
         if(mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1 - shifter > 0 && shifter < mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1) shifter = mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1;
         if(mario->x - map->x - SCREEN_MARGIN - 1 - shifter < 0 && shifter > mario->x - map->x - SCREEN_MARGIN - 1) shifter = mario->x - map->x - SCREEN_MARGIN - 1;
@@ -126,7 +130,7 @@ int main(void)
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
             draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
-        status(score, coins, "1 # 1", 300 - (time - startTime), lives);
+        status(score, coins, worldC, gameTime > 0 ? gameTime : 0, lives);
 
         frmdraw();
     }
