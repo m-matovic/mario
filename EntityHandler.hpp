@@ -48,6 +48,9 @@ void clearEntityList(MapViewport *map){
 }
 
 void killEntity(EntityNode *entity, MapViewport *map){
+    int unkillableEntities[] = {FIRE_BAR, PLATFORM, HAMMER, FIREBALL};
+    for(int i = 0; i < sizeof unkillableEntities / sizeof unkillableEntities[0]; i++) if(entity->type == unkillableEntities[i]) return;
+
     if(entity == map->map->entityList) map->map->entityList = entity->next;
     else entity->prev->next = entity->next;
     addDeadEntity(entity, map);
@@ -287,12 +290,14 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
     int AIless[] = {MARIO, MUSHROOM_ENTITY, STAR_ENTITY, FIREFLOWER, KOOPA_SHELL};
 
     while(itr != nullptr){
-        if((map->x - RENDER_DISTANCE > itr->x || itr->x > map->x + VIEWPORT_WIDTH + RENDER_DISTANCE /* || itr->type == MARIO*/) && itr->type != PLATFORM && itr->type != FIRE_BAR) {
+        if((map->x - RENDER_DISTANCE > itr->x || itr->x > map->x + VIEWPORT_WIDTH + RENDER_DISTANCE /*|| itr->type == MARIO*/) && itr->type != PLATFORM && itr->type != FIRE_BAR) {
             itr = itr->next;
             continue;
         }
+        
         if(itr->type != MARIO && itr->x + EPS >= mario->x && itr->x - EPS <= mario->x && itr->y + EPS >= mario->y && itr->y - EPS <= mario->y) itr->timer = -20;
         itr->isOnGround = true;
+
         if(itr->isOnGround && (ceil(itr->y + itr->height) >= VIEWPORT_HEIGHT || 
         getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height)) == AIR && getMapBlock(map->map, floor(itr->x + itr->width), floor(itr->y + itr->height)) == AIR)) itr->isOnGround = false;
         if(itr->isOnGround && itr->velY > 0 && itr->type != PIRANHA_PLANT) {

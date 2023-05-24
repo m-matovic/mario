@@ -198,17 +198,17 @@ void entityToBlockCollision(EntityNode *entity){
                     itr->velX = -itr->velX;
                     itr = static_cast<Platform*> (itr->entity)->next;
                 }
+                itr->velX = -itr->velX;
                 static_cast<Platform*> (itr->entity)->master = true;
             }
-            else {
-                if(entity->velX < 0){
+            else if(entity->velX > 0){
                 EntityNode *itr = entity;
                 while(static_cast<Platform*> (itr->entity)->prev != nullptr){
                     itr->velX = -itr->velX;
                     itr = static_cast<Platform*> (itr->entity)->prev;
                 }
+                itr->velX = -itr->velX;
                 static_cast<Platform*> (itr->entity)->master = true;
-            }
             }
         }
     }
