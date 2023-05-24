@@ -24,8 +24,6 @@
 #define BLOCKS_NUMBER 41
 #define ENTITIES_NUMBER 58
 
-#define HIGHSCORE_NUMBER 10
-
 #include "nuklear.h"
 #include "nuklear_glfw_gl3.h"
 
@@ -33,6 +31,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+
+#include "MapEntityCommon.hpp"
 
 GLFWwindow *window;
 struct nk_glfw glfw = {0};
@@ -43,18 +43,13 @@ struct nk_image entities_left[ENTITIES_NUMBER];
 int entity_widths[ENTITIES_NUMBER];
 int entity_heights[ENTITIES_NUMBER];
 int showscores = 0;
-int *highscores[HIGHSCORE_NUMBER];
+int *highscores;
 
 struct timespec time_of_frame;
 
 void load_scores(void)
 {
-    FILE *fp = fopen("highscores.txt", "r");
-
-    for(int i = 0; i < HIGHSCORE_NUMBER; i++)
-        fscanf(fp, "%d\n", &highscores[i]);
-
-    fclose(fp);
+    highscores = getScore();
 }
 
 static void error_callback(int e, const char *d)
@@ -153,7 +148,7 @@ int menu(void)
 
         char *buffer = (char *)malloc(BUFSIZ);
 
-        for(int i = 0; i < HIGHSCORE_NUMBER; i++)
+        for(int i = 0; i < SCORE_COUNT; i++)
         {
             sprintf(buffer, "#%d. %d", i + 1, highscores[i]);
             nk_layout_row_dynamic(&glfw.ctx, 50, 1);
