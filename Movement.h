@@ -18,9 +18,9 @@ typedef struct {
 
 bool isLanding(EntityNode *entity, float timeDiff, Map *map){
     float newFeet = entity->y + entity->height + entity->velY * timeDiff;
-    Block left = getMapBlock(map, (int)floorf(entity->x), (int) floorf(newFeet));
-    Block right = getMapBlock(map, (int) floorf(entity->x + entity->width), (int) floorf(newFeet));
-    if (left.type == AIR && right.type == AIR){
+    int left = getMapBlock(map, (int)floorf(entity->x), (int) floorf(newFeet));
+    int right = getMapBlock(map, (int) floorf(entity->x + entity->width), (int) floorf(newFeet));
+    if (left == AIR && right == AIR){
         return false;
     }
     return true;
@@ -32,10 +32,10 @@ bool collisionX(EntityNode *entity, float timeDiff, Map *map){
     }
 
     float newX = entity->x + entity->velX + ((entity->velX > 0) ? entity->width : 0);
-    Block top = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y));
-    Block middle = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
-    Block bottom = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height));
-    if (top.type == AIR && middle.type == AIR && bottom.type == AIR){
+    int top = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y));
+    int middle = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
+    int bottom = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
+    if (top == AIR && middle == AIR && bottom == AIR){
         return false;
     }
     return true;
@@ -82,9 +82,9 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
 
      if (entity->isOnGround){            //Provera da li treba da krenemo da padamo
          float newFeet = entity->y + entity->height + 0.5;
-         Block left = getMapBlock(map, (int)floorf(entity->x), (int) floorf(newFeet));
-         Block right = getMapBlock(map, (int) floorf(entity->x + entity->width), (int) floorf(newFeet));
-         if (left.type == AIR && right.type == AIR){
+         int left = getMapBlock(map, (int)floorf(entity->x), (int) floorf(newFeet));
+         int right = getMapBlock(map, (int) floorf(entity->x + entity->width), (int) floorf(newFeet));
+         if (left == AIR && right == AIR){
              entity->isOnGround = false;
          }
      }
