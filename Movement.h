@@ -17,33 +17,54 @@ typedef struct {
 
 
 bool isLanding(EntityNode *entity, float timeDiff, Map *map){
-    float newY = entity->y + timeDiff* entity->velY;
-    if (floorf(entity->y) == floorf(newY)){
+    float newFeet = entity->y + entity->height + entity->velY * timeDiff;
+    Block left = getMapBlock(map, (int)floorf(entity->x), (int) floorf(newFeet));
+    Block right = getMapBlock(map, (int) floorf(entity->x + entity->width), (int) floorf(newFeet));
+    if (left.type == AIR && right.type == AIR){
         return false;
-    } else{
-        Block nextL = getBlock(getMapBlock(map, (int)floorf(entity->x), (int)ceilf(newY)));
-        Block nextR = getBlock(getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(newY)));
-        if (nextL.type == AIR and nextR.type == AIR)
-            return false;
-        else
-            return true;
     }
+    return true;
+}
+
+bool collisionX(EntityNode *entity, float timeDiff, Map *map){
+    if (entity->velX == 0){
+        return false;
+    }
+
+    float newX = entity->x + entity->velX + ((entity->velX > 0) ? entity->width : 0);
+    Block top = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y));
+    Block middle = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
+    Block bottom = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height));
+    if (top.type == AIR && middle.type == AIR && bottom.type == AIR){
+        return false;
+    }
+    return true;
 }
 
 void moveEntity(EntityNode *entity, float timeDiff, Map *map){
     if (entity->velX != 0){
-        entity->x += entity->velX * timeDiff;
+        if (!collisionX(entity, timeDiff, map)){
+            entity->x += entity->velX * timeDiff;
+        } else{
+            if (entity->velX < 0){
+                entity->x = ceilf(entity->x + entity->velX*timeDiff);
+                entity->velX = 0;
+                entity->accX = 0;
+            } else{
+                entity->x = floorf(entity->x + entity->velX * timeDiff + entity->height) - entity->height;
+            }
+        }
     }
-    //if (!entity->isOnGround){
-        // if (!isLanding(entity, timeDiff, map)){
+    if (!entity->isOnGround){
+         if (!isLanding(entity, timeDiff, map)){
             entity->y += entity->velY * timeDiff;
             entity->velY += entity->accY * timeDiff;
-        // } else{
-        //     entity->y = floorf(entity->y) + 1;
-        //     entity->velY = 0;
-        //     entity->isOnGround = true;
-        // }
-    //}                                   //Kretanje kao i provera da li smo sleteli
+         } else{
+             entity->isOnGround = true;
+             entity->velY = 0;
+             entity->y = ceilf(entity->y);
+         }
+    }                                   //Kretanje kao i provera da li smo sleteli
 
     if (entity->type == MARIO){         //Promena brzine za Mario i ostale entitete
         if (entity->accX > 0 && entity->velX < MAX_MOVE_SPEED){
@@ -59,13 +80,14 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
         }
     }
 
-    // if (entity->isOnGround){            //Provera da li treba da krenemo da padamo
-    //     Block nextL = getBlock(getMapBlock(map, (int)floorf(entity->x), (int)ceilf(entity->y - 1)));
-    //     Block nextR = getBlock(getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(entity->y - 1)));
-    //     if (nextL.type == AIR && nextR.type == AIR){
-    //         entity->isOnGround = false;
-    //     }
-    // }
+     if (entity->isOnGround){            //Provera da li treba da krenemo da padamo
+         float newFeet = entity->y + entity->height + 0.5;
+         Block left = getMapBlock(map, (int)floorf(entity->x), (int) floorf(newFeet));
+         Block right = getMapBlock(map, (int) floorf(entity->x + entity->width), (int) floorf(newFeet));
+         if (left.type == AIR && right.type == AIR){
+             entity->isOnGround = false;
+         }
+     }
 }
 
 
