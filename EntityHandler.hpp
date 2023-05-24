@@ -317,7 +317,8 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
 
         if(!itr->isOnGround) entityFall(itr, map);
 
-        if(itr->x - EPS < 0 || itr->x + EPS > map->map->length - 1) itr->velX = -itr->velX; 
+        if(itr->x - EPS < 0) itr->velX = abs(itr->velX); 
+        if(itr->x + EPS > map->map->length - 1) itr->velX = -abs(itr->velX);
         moveEntity(itr, timeDelta, map->map);
 
         EntityNode *temp = nullptr;

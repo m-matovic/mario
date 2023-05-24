@@ -48,6 +48,8 @@ int main(void)
     summonEntity(PIRANHA_PLANT, 5, 13, map->map);
     mario->velX = 0;
     double shifter = 0;
+    int direction = -1;
+
     while(!shouldEnd())
     {
         /* Check for input example */
@@ -108,7 +110,15 @@ int main(void)
         }
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            if(itr->type != FIRE_BAR) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type != FIRE_BAR && itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+
+        if(mario->timer <= -20) draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velY != 0) draw_entity(JUMPING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velX != 0) draw_entity(WALKING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else draw_entity(STANDING, direction, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+
+        if(mario->velX > EPS) direction = 1;
+        else if(mario->velX < -EPS) direction = -1;
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
@@ -128,7 +138,7 @@ int main(void)
             if(itr->type == FIRE_BAR) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
-            draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         status(score, coins, worldC, gameTime > 0 ? gameTime : 0, lives);
 
