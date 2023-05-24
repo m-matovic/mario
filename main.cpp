@@ -17,7 +17,6 @@ enum states { STANDING = 20, WALKING, JUMPING, POLE, LARGE_STANDING, LARGE_WALKI
 
 int main(void)
 {
-    MapViewport *map = mapInit("worlds/1");
     glfwinit("mario");
 
     int showmenu = 1;
@@ -29,6 +28,9 @@ int main(void)
         frmdraw();
     }
     
+    int world = 1;
+    MapViewport *map = mapInit("worlds/" + to_string(world));
+
     bg_color(97, 133, 248);
     load_backgrounds();
     load_blocks();
@@ -45,7 +47,6 @@ int main(void)
     EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
     mario->velX = 0;
     double shifter = 0;
-    double lastShifter = 0;
     while(!shouldEnd())
     {
         /* Check for input example */
@@ -63,6 +64,14 @@ int main(void)
         time = newTime;
 
         entityTick(map, mario, timeDiff);
+        if(mario->timer <= -30) {
+            freeMap(map);
+            map = mapInit("worlds/" + to_string(world));
+            mario = summonEntity(MARIO, 2, 5, map->map);
+            shifter = 0;
+            lives--;
+            if(lives == 0) break;
+        }
 
         if(mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1 - shifter > 0 && shifter < mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1) shifter = mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1;
         if(mario->x - map->x - SCREEN_MARGIN - 1 - shifter < 0 && shifter > mario->x - map->x - SCREEN_MARGIN - 1) shifter = mario->x - map->x - SCREEN_MARGIN - 1;
@@ -78,8 +87,6 @@ int main(void)
         if(shifter > 1) shifter = 1;
 
         if(mario->x < 0) mario->x = 0;
-        if(shifter != lastShifter) cout << shifter << endl;
-        lastShifter = shifter;
 
         frminit();
 
@@ -97,7 +104,7 @@ int main(void)
         }
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            if(itr->type != FIRE_BAR) draw_entity(itr->type, 1, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type != FIRE_BAR) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
@@ -114,10 +121,10 @@ int main(void)
         }
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            if(itr->type == FIRE_BAR) draw_entity(itr->type, 1, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type == FIRE_BAR) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
-            draw_entity(itr->type, -1, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+            draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         status(score, coins, "1 # 1", 300 - (time - startTime), lives);
 

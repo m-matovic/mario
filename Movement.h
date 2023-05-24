@@ -34,37 +34,37 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
         entity->x += entity->velX * timeDiff;
     }
     if (!entity->isOnGround){
-        if (!isLanding(entity, timeDiff, map)){
+        // if (!isLanding(entity, timeDiff, map)){
             entity->y += entity->velY * timeDiff;
-            entity->velY += entity->accY;
-        } else{
-            entity->y = floorf(entity->y) + 1;
-            entity->velY = 0;
-            entity->isOnGround = true;
-        }
+            entity->velY += entity->accY * timeDiff;
+        // } else{
+        //     entity->y = floorf(entity->y) + 1;
+        //     entity->velY = 0;
+        //     entity->isOnGround = true;
+        // }
     }                                   //Kretanje kao i provera da li smo sleteli
 
     if (entity->type == MARIO){         //Promena brzine za Mario i ostale entitete
         if (entity->accX > 0 && entity->velX < MAX_MOVE_SPEED){
-            entity->velX += entity->accX;
+            entity->velX += entity->accX * timeDiff;
         } else if (entity->accX < 0 && entity->velX > -MAX_MOVE_SPEED){
-            entity->velX += entity->accX;
+            entity->velX += entity->accX * timeDiff;
         }
     } else{
         if (entity->accX > 0 && entity->velX < ENTITY_MOVE_SPEED){
-            entity->velX += entity->accX;
+            entity->velX += entity->accX * timeDiff;
         } else if (entity->accX < 0 && entity->velX > -MAX_MOVE_SPEED){
-            entity->velX += entity->accX;
+            entity->velX += entity->accX * timeDiff;
         }
     }
 
-    if (entity->isOnGround){            //Provera da li treba da krenemo da padamo
-        Block nextL = getBlock(getMapBlock(map, (int)floorf(entity->x), (int)ceilf(entity->y - 1)));
-        Block nextR = getBlock(getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(entity->y - 1)));
-        if (nextL.type == AIR && nextR.type == AIR){
-            entity->isOnGround = false;
-        }
-    }
+    // if (entity->isOnGround){            //Provera da li treba da krenemo da padamo
+    //     Block nextL = getBlock(getMapBlock(map, (int)floorf(entity->x), (int)ceilf(entity->y - 1)));
+    //     Block nextR = getBlock(getMapBlock(map, (int)floorf(entity->x + entity->width), (int)ceilf(entity->y - 1)));
+    //     if (nextL.type == AIR && nextR.type == AIR){
+    //         entity->isOnGround = false;
+    //     }
+    // }
 }
 
 
