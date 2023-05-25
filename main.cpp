@@ -161,7 +161,7 @@ int main(void)
         else if(mario->velX != 0) draw_entity(WALKING, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
         else draw_entity(STANDING, ceil(direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
 
-        status(score, coins, worldC, gameTime > 0 ? gameTime : 0, lives);
+        status(score, coins, world, gameTime > 0 ? gameTime : 0, lives);
 
         frame_draw();
     }

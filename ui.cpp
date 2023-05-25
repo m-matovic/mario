@@ -293,7 +293,7 @@ int key_down(int keycode)
     return glfw.ctx.input.keyboard.keys[keycode].down;
 }
 
-void status(int score, int coins, char *world, int time, int lives)
+void status(int score, int coins, int world, int time, int lives)
 {
     nk_layout_row_dynamic(&glfw.ctx, 48, 5);
 
@@ -309,7 +309,8 @@ void status(int score, int coins, char *world, int time, int lives)
     nk_label(&glfw.ctx, nums, NK_TEXT_CENTERED);
     sprintf(nums, "%d", coins);
     nk_label(&glfw.ctx, nums, NK_TEXT_CENTERED);
-    nk_label(&glfw.ctx, world, NK_TEXT_CENTERED);
+    sprintf(nums, "%d", world);
+    nk_label(&glfw.ctx, nums, NK_TEXT_CENTERED);
     sprintf(nums, "%d", time);
     nk_label(&glfw.ctx, nums, NK_TEXT_CENTERED);
     sprintf(nums, "%d", lives);
