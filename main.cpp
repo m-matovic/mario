@@ -1,6 +1,7 @@
 #include <iostream>
 #include <time.h>
 #include <string>
+#include <cmath>
 #include "MapEntityCommon.hpp"
 //#include "Movement.h"
 #include "sys/time.h"
@@ -29,7 +30,7 @@ int main(void)
         frmdraw();
     }
     
-    int world = 2;
+    int world = 1;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
     char worldC[] = {'0', '\0'};
     worldC[0] = world + '0';
@@ -48,7 +49,7 @@ int main(void)
     EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
     mario->velX = 0;
     double shifter = 0;
-    int direction = -1;
+    float direction = -EPS;
 
     while(!shouldEnd())
     {
@@ -60,6 +61,7 @@ int main(void)
         if(key_down(LEFT)) mario->velX = -speed;
         else if(key_down(RIGHT)) mario->velX = speed;
         else mario->velX = 0;
+        if(key_down(UP)) mario->velY = -JUMP_VELOCITY;
 
         gettimeofday(&current, NULL);
         double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
@@ -71,8 +73,12 @@ int main(void)
         if(mario->timer <= -30 || mario->x + mario->width > map->map->length - 5) {
             if(mario->timer <= -30) lives--;
             else if(world < 4) world++;
+            else break;
+
             freeMap(map);
             map = mapInit("worlds/" + std::to_string(world));
+            if(world == 4) summonEntity(BOWSER, 137, 9, map->map);
+
             mario = summonEntity(MARIO, 2, 5, map->map);
             shifter = 0;
             gameTime = 300;
@@ -113,8 +119,8 @@ int main(void)
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
             if(itr->type != FIRE_BAR && itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
-        if(mario->velX > EPS) direction = 1;
-        else if(mario->velX < -EPS) direction = -1;
+        if(mario->velX > EPS) direction = EPS;
+        else if(mario->velX < -EPS) direction = -EPS;
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
@@ -137,9 +143,9 @@ int main(void)
             if(itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         if(mario->timer <= -20) draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velY != 0) draw_entity(JUMPING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velX != 0) draw_entity(WALKING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else draw_entity(STANDING, direction, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velY != 0) draw_entity(JUMPING, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velX != 0) draw_entity(WALKING, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else draw_entity(STANDING, ceil(direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
 
         status(score, coins, worldC, gameTime > 0 ? gameTime : 0, lives);
 

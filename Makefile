@@ -6,6 +6,9 @@ LIBS = -lGL -lm -lGLU -lGLEW -lglfw
 
 BIN = mario
 
+debug: CXXFLAGS += -g
+debug: main
+
 main: main.o ui.o MapLoader.o EntityHandler.o
 	${CXX} -o ${BIN} main.o ui.o EntityHandler.o MapLoader.o ${CXXFLAGS} ${LIBS}
 
@@ -20,9 +23,6 @@ MapLoader.o: MapLoader.cpp MapEntityCommon.hpp
 
 EntityHandler.o: EntityHandler.cpp MapEntityCommon.hpp
 	${CXX} -c EntityHandler.cpp ${CXXFLAGS} ${LIBS}
-
-debug: CXXFLAGS += -g
-debug: main
 
 clean:
 	rm *.o
