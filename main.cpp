@@ -35,28 +35,41 @@ int main(void)
     char worldC[] = {'0', '\0'};
     worldC[0] = world + '0';
 
-    bg_color(97, 133, 248);
     load_backgrounds();
     load_blocks();
     load_entities();
 
-    float gameTime = 300;
     struct timeval current;
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
-    float startTime = currentTime;
 
+    float splash_duration = 2.0f;
+    bg_color(0, 0, 0);
+
+    while(splash_duration > 0)
+    {
+        frminit();
+        show_splash(world);
+        frmdraw();
+
+        gettimeofday(&current, NULL);
+        double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
+        double timeDiff = newTime - currentTime + (newTime < currentTime ? 10 : 0);
+        currentTime = newTime;
+        splash_duration -= timeDiff;
+    }
+
+    bg_color(97, 133, 248);
     EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
 
+    float gameTime = 300;
+    float startTime = currentTime;
+
     while(!shouldEnd())
     {
-        /* Check for input example */
-        if(key_down(UP));
-            /* Handle up key pressed */
-
         float speed = 10.0f;
         if(key_down(LEFT)) mario->velX = -speed;
         else if(key_down(RIGHT)) mario->velX = speed;
