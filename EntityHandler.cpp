@@ -3,19 +3,6 @@
 #include <cstdlib>
 #include "MapEntityCommon.hpp"
 
-#define TERMINAL_VELOCITY 15.0f
-#define AVOIDANCE_VELOCITY 1.0f
-#define PIRANHA_RANGE 5.0f
-#define PIRANHA_DOWNTIME 5.0f
-#define PIRANHA_UPTIME 5.0f
-#define JUMP_VELOCITY 8.0f
-#define FIRE_BAR_ANGULAR_VELOCITY 2.0f
-#define BOWSER_HAMMER_COOLDOWN 2.0f
-#define BOWSER_FIRE_COOLDOWN 2.0f
-#define BOWSER_RANGE 20.0f
-#define HAMMER_COUNT 3
-#define RENDER_DISTANCE 10
-
 void setEntityDimensions(EntityNode *entity, int type){
     switch(type){
         case PLATFORM:
@@ -150,7 +137,7 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             entity->entity = malloc(sizeof(State));
             State *state = static_cast<State*>(entity->entity);
             entity->timer = 0;
-            state->state = 0;
+            state->state = 1;
             break;
         }
         case BOWSER: {
@@ -451,10 +438,14 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         itr->isOnGround = true;
 
         if(itr->isOnGround && (ceil(itr->y + itr->height) >= VIEWPORT_HEIGHT || 
-        getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height)) == AIR && getMapBlock(map->map, floor(itr->x + itr->width), floor(itr->y + itr->height)) == AIR)) itr->isOnGround = false;
+        getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height + EPS)) == AIR && getMapBlock(map->map, floor(itr->x + itr->width), floor(itr->y + itr->height + EPS)) == AIR)) itr->isOnGround = false;
         if(itr->isOnGround && itr->velY > 0 && itr->type != PIRANHA_PLANT) {
             itr->velY = 0;
             itr->accY = 0;
+        }
+        if(itr->isOnGround){
+            while(getMapBlock(map->map, floor(itr->x), floor(itr->y + itr->height + EPS)) != AIR || getMapBlock(map->map, floor(itr->x + itr->width), floor(itr->y + itr->height + EPS)) != AIR) itr->y -= 0.01;
+            itr->y += 0.01;
         }
 
         if(itr->type == KOOPA_PARATROOPA) koopaParatroopaAI(itr);
@@ -476,7 +467,13 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
 
         if(itr->x - EPS < 0) itr->velX = abs(itr->velX); 
         if(itr->x + EPS > map->map->length - 1) itr->velX = -abs(itr->velX);
-        moveEntity(itr, timeDelta, map->map);
+
+        if(collisionX(itr, timeDelta, map->map) && itr->type != MARIO) entityToBlockCollision(itr);
+
+        itr->x += itr->velX * timeDelta + itr->accX * timeDelta * timeDelta / 2;
+        itr->velX += itr->accX * timeDelta;
+        itr->y += itr->velY * timeDelta + itr->accY * timeDelta * timeDelta / 2;
+        itr->velY += itr->accY * timeDelta;
 
         EntityNode *temp = nullptr;
         if(itr->type == 255 || itr->timer <= -20) temp = itr;
@@ -491,7 +488,8 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
     while(itr != nullptr) {
         itr->isOnGround = false;
         itr->accY = GRAVITY_ACCELERATION;
-        moveEntity(itr, timeDelta, map->map);
+        itr->y += itr->velY * timeDelta + itr->accY * timeDelta * timeDelta / 2;
+        itr->velY += itr->accY * timeDelta;
         EntityNode *prev = itr;
         itr = itr->next;
         if(prev->y + prev->height + EPS >= map->map->height) {

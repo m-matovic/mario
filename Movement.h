@@ -31,7 +31,7 @@ bool collisionX(EntityNode *entity, float timeDiff, Map *map){
         return false;
     }
 
-    float newX = entity->x + entity->velX + ((entity->velX > 0) ? entity->width : 0);
+    float newX = entity->x + entity->velX * timeDiff + ((entity->velX > 0) ? entity->width : 0);
     int top = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y));
     int middle = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
     int bottom = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));

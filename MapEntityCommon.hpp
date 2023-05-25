@@ -5,12 +5,12 @@
 
 #define CHUNK_LEN 32 // The map is split into chunks with dimensions map.height * CHUNK_LEN to avoid memory allocation problems
 #define FIRE_BAR_LENGTH 6
-#define GRAVITY_ACCELERATION 9.81f
+#define GRAVITY_ACCELERATION 20
 #define ENTITY_SPEED 2.0f
 #define PROJECTILE_LIFE 5.0f
 #define VIEWPORT_WIDTH 30
 #define VIEWPORT_HEIGHT 15
-#define EPS 0.1f
+#define EPS 0.01f
 #define TERMINAL_VELOCITY 15.0f
 #define AVOIDANCE_VELOCITY 1.0f
 #define PIRANHA_RANGE 5.0f
@@ -29,6 +29,18 @@
 #define MAX_LENGTH 0x7fff // Maximum map length (2^15-1)
 #define MAX_HEIGHT 0x3f // Maximum map height (2^6-1)
 #define SCORE_COUNT 10
+#define TERMINAL_VELOCITY 15.0f
+#define AVOIDANCE_VELOCITY 1.0f
+#define PIRANHA_RANGE 5.0f
+#define PIRANHA_DOWNTIME 5.0f
+#define PIRANHA_UPTIME 5.0f
+#define JUMP_VELOCITY 8.0f
+#define FIRE_BAR_ANGULAR_VELOCITY 2.0f
+#define BOWSER_HAMMER_COOLDOWN 2.0f
+#define BOWSER_FIRE_COOLDOWN 2.0f
+#define BOWSER_RANGE 20.0f
+#define HAMMER_COUNT 3
+#define RENDER_DISTANCE 10
 
 enum Blocks {
     AIR, BRICK, BRICK_GROUND, BRICK_STAIR, QUESTION_BLOCK_EMPTY, QUESTION_BLOCK, INVISIBLE_BLOCK, CANON_TOP, CANON_BASE,

@@ -29,7 +29,7 @@ int main(void)
         frmdraw();
     }
     
-    int world = 1;
+    int world = 2;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
     char worldC[] = {'0', '\0'};
     worldC[0] = world + '0';
@@ -68,12 +68,13 @@ int main(void)
         gameTime -= timeDiff;
 
         entityTick(map, mario, timeDiff);
-        if(mario->timer <= -30 ) {
+        if(mario->timer <= -30 || mario->x + mario->width > map->map->length - 5) {
+            if(mario->timer <= -30) lives--;
+            else if(world < 4) world++;
             freeMap(map);
             map = mapInit("worlds/" + std::to_string(world));
             mario = summonEntity(MARIO, 2, 5, map->map);
             shifter = 0;
-            lives--;
             gameTime = 300;
             if(lives == 0) break;
         }
@@ -112,11 +113,6 @@ int main(void)
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
             if(itr->type != FIRE_BAR && itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
-        if(mario->timer <= -20) draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velY != 0) draw_entity(JUMPING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velX != 0) draw_entity(WALKING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else draw_entity(STANDING, direction, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-
         if(mario->velX > EPS) direction = 1;
         else if(mario->velX < -EPS) direction = -1;
 
@@ -139,6 +135,11 @@ int main(void)
 
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
             if(itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+
+        if(mario->timer <= -20) draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velY != 0) draw_entity(JUMPING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velX != 0) draw_entity(WALKING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else draw_entity(STANDING, direction, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
 
         status(score, coins, worldC, gameTime > 0 ? gameTime : 0, lives);
 
