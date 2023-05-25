@@ -58,7 +58,7 @@ int main(void)
             background_color(0, 0, 0);
 
             frame_init();
-            show_splash(world);
+            show_splash(world, lives);
             frame_draw();
 
             gettimeofday(&current, NULL);

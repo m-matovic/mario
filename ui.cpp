@@ -319,15 +319,23 @@ void status(int score, int coins, int world, int time, int lives)
     free(nums);
 }
 
-void show_splash(int val)
+void show_splash(int world, int lives)
 {
     char *text = (char *)malloc(BUFSIZ);
-    sprintf(text, "%d", val);
+    sprintf(text, "%d", world);
 
-    nk_layout_row_dynamic(&glfw.ctx, 240, 1);
+    nk_layout_row_dynamic(&glfw.ctx, 200, 1);
 
     nk_layout_row_dynamic(&glfw.ctx, 80, 1);
     if(nk_button_label(&glfw.ctx, "WORLD"));
+
+    nk_layout_row_dynamic(&glfw.ctx, 80, 1);
+    if(nk_button_label(&glfw.ctx, text));
+
+    sprintf(text, "%d", lives);
+
+    nk_layout_row_dynamic(&glfw.ctx, 80, 1);
+    if(nk_button_label(&glfw.ctx, "LIVES"));
 
     nk_layout_row_dynamic(&glfw.ctx, 80, 1);
     if(nk_button_label(&glfw.ctx, text));

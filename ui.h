@@ -14,7 +14,7 @@ void draw_background(int type, int x, int y);
 void draw_entity(int type, int dir, int x, int y);
 int key_down(int keycode);
 void status(int score, int coins, int world, int time, int lives);
-void show_splash(int value);
+void show_splash(int world, int lives);
 void frame_draw(void);
 void glfw_end(void);
 
