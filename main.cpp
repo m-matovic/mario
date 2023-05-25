@@ -43,33 +43,34 @@ int main(void)
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
-    float splash_duration = 2.0f;
-    background_color(0, 0, 0);
-
-    while(splash_duration > 0)
-    {
-        frame_init();
-        show_splash(world);
-        frame_draw();
-
-        gettimeofday(&current, NULL);
-        double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
-        double timeDiff = newTime - currentTime + (newTime < currentTime ? 10 : 0);
-        currentTime = newTime;
-        splash_duration -= timeDiff;
-    }
-
-    background_color(97, 133, 248);
     EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
 
-    float gameTime = 300;
+    float gameTime = 302.0f;
     float startTime = currentTime;
 
     while(!should_end())
     {
+        if(gameTime > 300.0f)
+        {
+            background_color(0, 0, 0);
+
+            frame_init();
+            show_splash(world);
+            frame_draw();
+
+            gettimeofday(&current, NULL);
+            double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
+            double timeDiff = newTime - currentTime + (newTime < currentTime ? 10 : 0);
+            currentTime = newTime;
+            gameTime -= timeDiff;
+
+            continue;
+        }
+
+        background_color(97, 133, 248);
         float speed = 10.0f;
         if(key_down(LEFT)) mario->velX = -speed;
         else if(key_down(RIGHT)) mario->velX = speed;
@@ -94,7 +95,7 @@ int main(void)
 
             mario = summonEntity(MARIO, 2, 5, map->map);
             shifter = 0;
-            gameTime = 300;
+            gameTime = 302.0f;
             if(lives == 0) break;
         }
         if(gameTime <= 0) mario->timer = -20;
