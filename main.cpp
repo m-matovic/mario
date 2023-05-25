@@ -19,15 +19,15 @@ enum states { STANDING = 20, WALKING, JUMPING, POLE, LARGE_STANDING, LARGE_WALKI
 
 int main(void)
 {
-    glfwinit("mario");
+    glfw_init("mario");
 
     int showmenu = 1;
     while(showmenu)
     {
-        frminit();
+        frame_init();
         showmenu = menu();
-        showmenu &= !shouldEnd();
-        frmdraw();
+        showmenu &= !should_end();
+        frame_draw();
     }
     
     int world = 1;
@@ -44,13 +44,13 @@ int main(void)
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
     float splash_duration = 2.0f;
-    bg_color(0, 0, 0);
+    background_color(0, 0, 0);
 
     while(splash_duration > 0)
     {
-        frminit();
+        frame_init();
         show_splash(world);
-        frmdraw();
+        frame_draw();
 
         gettimeofday(&current, NULL);
         double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
@@ -59,7 +59,7 @@ int main(void)
         splash_duration -= timeDiff;
     }
 
-    bg_color(97, 133, 248);
+    background_color(97, 133, 248);
     EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
     mario->velX = 0;
     double shifter = 0;
@@ -68,7 +68,7 @@ int main(void)
     float gameTime = 300;
     float startTime = currentTime;
 
-    while(!shouldEnd())
+    while(!should_end())
     {
         float speed = 10.0f;
         if(key_down(LEFT)) mario->velX = -speed;
@@ -114,7 +114,7 @@ int main(void)
 
         if(mario->x < 0) mario->x = 0;
 
-        frminit();
+        frame_init();
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
@@ -162,10 +162,10 @@ int main(void)
 
         status(score, coins, worldC, gameTime > 0 ? gameTime : 0, lives);
 
-        frmdraw();
+        frame_draw();
     }
 
-    glfwend();
+    glfw_end();
 
     return 0;
 }

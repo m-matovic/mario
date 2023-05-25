@@ -57,7 +57,7 @@ static void error_callback(int e, const char *d)
     printf("Error %d: %s\n", e, d);
 }
 
-void glfwinit(const char *wintag)
+void glfw_init(const char *wintag)
 {
     glfwSetErrorCallback(error_callback);
 
@@ -105,12 +105,12 @@ void glfwinit(const char *wintag)
     load_scores();
 }
 
-int shouldEnd(void)
+int should_end(void)
 {
     return glfwWindowShouldClose(window);
 }
 
-void frminit(void)
+void frame_init(void)
 {
     clock_gettime(CLOCK_REALTIME, &time_of_frame);
 
@@ -138,7 +138,7 @@ int menu(void)
         if(nk_button_label(&glfw.ctx, "Quit"))
         {
             nk_end(&glfw.ctx);
-            glfwend();
+            glfw_end();
             exit(0);
         }
     }
@@ -256,7 +256,7 @@ void load_entities(void)
     free(filename);
 }
 
-void bg_color(int r, int g, int b)
+void background_color(int r, int g, int b)
 {
     glfw.ctx.style.window.fixed_background = nk_style_item_color(nk_rgba(r, g, b, 255));
 }
@@ -334,7 +334,7 @@ void show_splash(int val)
     free(text);
 }
 
-void frmdraw(void)
+void frame_draw(void)
 {
     nk_end(&glfw.ctx);
 
@@ -344,7 +344,7 @@ void frmdraw(void)
     glfwSwapBuffers(window);
 }
 
-void glfwend(void)
+void glfw_end(void)
 {
     nk_glfw3_shutdown(&glfw);
     glfwTerminate();
