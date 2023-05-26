@@ -433,6 +433,8 @@ nk_glfw3_new_frame(struct nk_glfw* glfw)
         glfwSetInputMode(glfw->win, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 #endif
 
+    nk_input_key(ctx, NK_KEY_F, glfwGetKey(win, GLFW_KEY_F) == GLFW_PRESS);
+
     nk_input_key(ctx, NK_KEY_DEL, glfwGetKey(win, GLFW_KEY_DELETE) == GLFW_PRESS);
     nk_input_key(ctx, NK_KEY_ENTER, glfwGetKey(win, GLFW_KEY_ENTER) == GLFW_PRESS);
     nk_input_key(ctx, NK_KEY_TAB, glfwGetKey(win, GLFW_KEY_TAB) == GLFW_PRESS);

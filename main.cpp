@@ -14,7 +14,7 @@ static int score = 0;
 static int coins = 0;
 static int lives = 3;
 
-enum keys { UP = 10, DOWN, LEFT, RIGHT };
+enum keys { UP = 10, DOWN, LEFT, RIGHT, F_KEY = 31 };
 enum states { STANDING = 20, WALKING, JUMPING, POLE, LARGE_STANDING, LARGE_WALKING, LARGE_JUMPING, LARGE_POLE, DYING };
 
 int main(void)
