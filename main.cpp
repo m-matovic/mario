@@ -30,7 +30,7 @@ int main(void)
         frame_draw();
     }
     
-    int world = 2;
+    int world = 4;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
@@ -211,8 +211,7 @@ int main(void)
         case 4:
             timer -= timeDiff;
             if(timer < 0) {
-                setMapBlock(map->map, desX, desY, AIR);
-                map->viewport[desY][(map->front + desX - map->x) % VIEWPORT_WIDTH].type = AIR;
+                setViewportBlock(map, desX, desY, AIR);
                 desX--;
                 timer = 0.25;
             }

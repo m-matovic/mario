@@ -128,6 +128,8 @@ unsigned char getMapBlock(Map *map, int x, int y);
 
 bool setMapBlock(Map *map, int x, int y, unsigned char block);
 
+bool setViewportBlock(MapViewport *map, int x, int y, unsigned char block);
+
 unsigned char getBackgroundBlock(Map *map, int x, int y);
 
 bool setBackgroundBlock(Map *map, int x, int y, unsigned char block);

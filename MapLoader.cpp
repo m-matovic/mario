@@ -26,6 +26,15 @@ bool setMapBlock(Map *map, int x, int y, unsigned char block) // Set the block c
     return true;
 }
 
+bool setViewportBlock(MapViewport *map, int x, int y, unsigned char block) {
+    setMapBlock(map->map, x, y, getBlock(block).type);
+    if(x >= map->x + VIEWPORT_WIDTH || x < map->x) return false;
+    if(y >= map->y + VIEWPORT_HEIGHT || y < map->y) return false;
+
+    map->viewport[(map->yFront + y - map->y) % VIEWPORT_HEIGHT][(map->front + x - map->x) % VIEWPORT_WIDTH] = getBlock(block);
+    return true;
+}
+
 unsigned char getBackgroundBlock(Map *map, int x, int y) // Get the block code from the background at coords (x,y)
 {
     if(x >= map->length || x < 0) return 255;
@@ -351,8 +360,6 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
                     else block = AIR;
                 }
                 if(block == BOWSER_BRIDGE && y > 0 && getMapBlock(map, x, y-1) == BOWSER_BRIDGE) {
-                    if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y-2, map);
-                    else summonEntity(BOWSER, x, y-2, map);
                     if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y-2, map);
                     else summonEntity(BOWSER, x, y-2, map);
                     setMapBlock(map, x, y-1, AIR);

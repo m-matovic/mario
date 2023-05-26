@@ -92,13 +92,11 @@ void entityToBlockCollision(EntityNode *entity, MapViewport *map, float timeDelt
             entity->timer = 1;
             entity->x = floor(newX);
             if(getMapBlock(map->map, floorf(newX), floorf(entity->y)) == AXE) {
-                setMapBlock(map->map, floorf(newX), floorf(entity->y), AIR);
-                map->viewport[(int) floorf(entity->y)][(map->front + (int) floorf(newX) - map->x) % VIEWPORT_WIDTH].type = AIR;
+                setViewportBlock(map, floorf(newX), floorf(entity->y), AIR);
                 entity->y = floorf(entity->y);
             }
             else if(getMapBlock(map->map, floorf(newX), floorf(entity->y + entity->height - 0.01)) == AXE) {
-                setMapBlock(map->map, floorf(newX), floorf(entity->y + entity->height - 0.01), AIR);
-                map->viewport[(int) floorf(entity->y + entity->height - 0.01)][(map->front + (int) floorf(newX) - map->x) % VIEWPORT_WIDTH].type = AIR;
+                setViewportBlock(map, floorf(newX), floorf(entity->y + entity->height - 0.01), AIR);
                 entity->y = floorf(entity->y + entity->height - 0.01);
             }
         }
