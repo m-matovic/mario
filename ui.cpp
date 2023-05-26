@@ -327,20 +327,33 @@ void show_splash(int world, int lives)
     nk_layout_row_dynamic(&glfw.ctx, 200, 1);
 
     nk_layout_row_dynamic(&glfw.ctx, 80, 1);
-    if(nk_button_label(&glfw.ctx, "WORLD"));
+    nk_label(&glfw.ctx, "WORLD", NK_TEXT_CENTERED);
 
     nk_layout_row_dynamic(&glfw.ctx, 80, 1);
-    if(nk_button_label(&glfw.ctx, text));
+    nk_label(&glfw.ctx, text, NK_TEXT_CENTERED);
 
     sprintf(text, "%d", lives);
 
     nk_layout_row_dynamic(&glfw.ctx, 80, 1);
-    if(nk_button_label(&glfw.ctx, "LIVES"));
+    nk_label(&glfw.ctx, "LIVES", NK_TEXT_CENTERED);
 
     nk_layout_row_dynamic(&glfw.ctx, 80, 1);
-    if(nk_button_label(&glfw.ctx, text));
+    nk_label(&glfw.ctx, text, NK_TEXT_CENTERED);
 
     free(text);
+}
+
+void end_message(void)
+{
+    nk_layout_row_dynamic(&glfw.ctx, 200, 1);
+
+    nk_layout_row_dynamic(&glfw.ctx, 80, 2);
+    nk_label(&glfw.ctx, "", NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, "THANK YOU MARIO!", NK_TEXT_CENTERED);
+
+    nk_layout_row_dynamic(&glfw.ctx, 80, 2);
+    nk_label(&glfw.ctx, "", NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, "YOUR QUEST IS OVER", NK_TEXT_CENTERED);
 }
 
 void frame_draw(void)

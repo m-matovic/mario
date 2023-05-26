@@ -78,7 +78,61 @@ int main(void)
             continue;
         }
 
-            background_color(97, 133, 248);
+        background_color(97, 133, 248);
+
+        frame_init();
+
+        for(int y = 0; y < VIEWPORT_HEIGHT; y++)
+        {
+            for(int x = 0; x < VIEWPORT_WIDTH; x++)
+            {
+                int xCord = map->x + x; //apsolutne x i y koordinate
+                int yCord = map->y + y;
+                int backgroundBlock = getBackgroundBlock(map->map, xCord, yCord);
+
+                if(backgroundBlock != 255)
+                    draw_background(backgroundBlock, (x - LEFT_OFFSET - shifter)  * 48, y * 48);
+            }
+        }
+
+        for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
+            if(itr->type != FIRE_BAR && itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+
+        if(mario->velX > EPS) direction = EPS;
+        else if(mario->velX < -EPS) direction = -EPS;
+
+        for(int y = 0; y < VIEWPORT_HEIGHT; y++)
+        {
+            for(int x = 0; x < VIEWPORT_WIDTH; x++)
+            {
+                Block foregroundBlock = map->viewport[(map->yFront + y) % VIEWPORT_HEIGHT][(map->front + x) % VIEWPORT_WIDTH];
+                int xCord = map->x + x; //apsolutne x i y koordinate
+                int yCord = map->y + y;
+
+                if(foregroundBlock.type != 255) {
+                    draw_block(foregroundBlock.type, (x - LEFT_OFFSET - shifter) * 48, y * 48);
+                }
+            }
+        }
+
+        for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
+            if(itr->type == FIRE_BAR) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+
+        for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
+            if(itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+
+        if(cutscene == 1) draw_entity(POLE, 1, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->timer <= -20) draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velY != 0) draw_entity(JUMPING, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velX != 0) draw_entity(WALKING, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else draw_entity(STANDING, ceil(direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+
+        status(score, coins, world, gameTime > 0 ? gameTime : 0, lives);
+
+        if(cutscene == 8)
+            end_message();
+
+        frame_draw();
 
         gettimeofday(&current, NULL);
         double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
@@ -222,57 +276,6 @@ int main(void)
         if(shifter > 1) shifter = 1;
 
         if(mario->x < 0) mario->x = 0;
-
-        frame_init();
-
-        for(int y = 0; y < VIEWPORT_HEIGHT; y++)
-        {
-            for(int x = 0; x < VIEWPORT_WIDTH; x++)
-            {
-                int xCord = map->x + x; //apsolutne x i y koordinate
-                int yCord = map->y + y;
-                int backgroundBlock = getBackgroundBlock(map->map, xCord, yCord);
-
-                if(backgroundBlock != 255)
-                    draw_background(backgroundBlock, (x - LEFT_OFFSET - shifter)  * 48, y * 48);
-            }
-        }
-
-        for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            if(itr->type != FIRE_BAR && itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
-
-        if(mario->velX > EPS) direction = EPS;
-        else if(mario->velX < -EPS) direction = -EPS;
-
-        for(int y = 0; y < VIEWPORT_HEIGHT; y++)
-        {
-            for(int x = 0; x < VIEWPORT_WIDTH; x++)
-            {
-                Block foregroundBlock = map->viewport[(map->yFront + y) % VIEWPORT_HEIGHT][(map->front + x) % VIEWPORT_WIDTH];
-                int xCord = map->x + x; //apsolutne x i y koordinate
-                int yCord = map->y + y;
-
-                if(foregroundBlock.type != 255) {
-                    draw_block(foregroundBlock.type, (x - LEFT_OFFSET - shifter) * 48, y * 48);
-                }
-            }
-        }
-
-        for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            if(itr->type == FIRE_BAR) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
-
-        for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
-            if(itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
-
-        if(cutscene == 1) draw_entity(POLE, 1, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->timer <= -20) draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velY != 0) draw_entity(JUMPING, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velX != 0) draw_entity(WALKING, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else draw_entity(STANDING, ceil(direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-
-        status(score, coins, world, gameTime > 0 ? gameTime : 0, lives);
-
-        frame_draw();
     }
 
     glfw_end();
