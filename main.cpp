@@ -183,18 +183,6 @@ int main(void)
             gameTime -= timeDiff;
             moveEntity(mario, timeDiff, map->map);
             entityTick(map, mario, timeDiff);
-            EntityNode *e1 = map->map->entityList;
-            EntityNode *e2 = e1->next;
-            while (e1 != NULL){
-                while (e2 != NULL){
-                    eECollision(e1, e2, map->map);
-                    e2 = e2->next;
-                }
-                e1 = e1->next;
-                if (e1 != NULL){
-                    e2 = e1->next;
-                }
-            }
             break;
         }
         case 1:
