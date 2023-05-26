@@ -53,7 +53,7 @@ void setEntityStartingVelocity(EntityNode *entity, Map *map) {
     entity->accY = 0;
 }
 
-void entityToBlockCollision(EntityNode *entity){
+void entityToBlockCollision(EntityNode *entity, MapViewport *map, float timeDelta){
     if(entity->type == PLATFORM){
         if(static_cast<Platform*> (entity->entity)->master){
             static_cast<Platform*> (entity->entity)->master = false;
@@ -78,7 +78,32 @@ void entityToBlockCollision(EntityNode *entity){
         }
     }
     else if(entity->type != MARIO) entity->velX = -entity->velX;
-    else entity->velX = 0;
+    else {
+        float newX = entity->x + entity->velX * timeDelta + ((entity->velX > 0) ? entity->width : 0);
+        int top = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y));
+        int middle = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
+        int bottom = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
+        if(top == FLAG_POLE || middle == FLAG_POLE || bottom == FLAG_POLE) {
+            entity->x = floor(newX) - entity->width / 2;
+            entity->timer = 1;
+        }
+        else if(top == AXE || middle == AXE || bottom == AXE){
+            entity->timer = 1;
+            entity->x = floor(newX);
+            if(getMapBlock(map->map, floorf(newX), floorf(entity->y)) == AXE) {
+                setMapBlock(map->map, floorf(newX), floorf(entity->y), AIR);
+                map->viewport[(int) floorf(entity->y)][(map->front + (int) floorf(newX) - map->x) % VIEWPORT_WIDTH].type = AIR;
+                entity->y = floorf(entity->y);
+            }
+            else if(getMapBlock(map->map, floorf(newX), floorf(entity->y + entity->height - 0.01)) == AXE) {
+                setMapBlock(map->map, floorf(newX), floorf(entity->y + entity->height - 0.01), AIR);
+                map->viewport[(int) floorf(entity->y + entity->height - 0.01)][(map->front + (int) floorf(newX) - map->x) % VIEWPORT_WIDTH].type = AIR;
+                entity->y = floorf(entity->y + entity->height - 0.01);
+            }
+        }
+
+        entity->velX = 0;
+    }
 }
 
 void addDeadEntity(EntityNode *entity, MapViewport *map){
@@ -147,11 +172,13 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             entity->timer = 0;
             state->state = 0;
             state->direction = false;
+            break;
         }
         case FIREBALL:
         case HAMMER:
             {
             entity->timer = PROJECTILE_LIFE;
+            entity->entity = nullptr;
             break;
         }
         case PLATFORM:{
@@ -170,15 +197,27 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
 }
 
 void removeEntity(EntityNode *entity, MapViewport *map){
-    if(map->map->deadEntities == entity) map->map->deadEntities = entity->next;
-    else entity->prev->next = entity->next;
+    if(map->map->deadEntities == entity) {
+        map->map->deadEntities = entity->next;
+        if(entity->next != nullptr) entity->next->prev = nullptr;
+    }
+    else {
+        entity->prev->next = entity->next;
+        if(entity->next != nullptr) entity->next->prev = entity->prev;
+    }
     if(entity->entity != NULL) free(entity->entity);
     free(entity);
 }
 
 void removeAliveEntity(EntityNode *entity, MapViewport *map){
-    if(map->map->entityList == entity) map->map->entityList = entity->next;
-    else entity->prev->next = entity->next;
+    if(map->map->entityList == entity) {
+        map->map->entityList = entity->next;
+        if(entity->next != nullptr) entity->next->prev = nullptr;
+    }
+    else {
+        entity->prev->next = entity->next;
+        if(entity->next != nullptr) entity->next->prev = entity->prev;
+    }
     if(entity->entity != NULL) free(entity->entity);
     free(entity);
 }
@@ -205,7 +244,7 @@ void killEntity(EntityNode *entity, MapViewport *map){
 
     if(entity == map->map->entityList) {
         map->map->entityList = entity->next;
-        entity->next->prev = nullptr;
+        if(entity->next != nullptr) entity->next->prev = nullptr;
     }
     else {
         entity->prev->next = entity->next;
@@ -235,8 +274,20 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
             case FIREFLOWER:
                 return;
             default:
-                if(mario->velY > 0){
-                    notMario->timer = -20;
+                if(mario->velY > 0 && mario->y < notMario->y){
+                    if(notMario->type == KOOPA_PARATROOPA) notMario->type = KOOPA_TROOPA;
+                    else if(notMario->type == KOOPA_TROOPA){
+                        notMario->type = KOOPA_SHELL;
+                        notMario->height = 1;
+                        notMario->velX = 0;
+                    }
+                    else if(notMario->type == KOOPA_SHELL){
+                        float marioMiddle = mario->x + mario->width / 2;
+                        if(marioMiddle < notMario->x + notMario->width / 2) notMario->velX = -ENTITY_SPEED;
+                        else if(marioMiddle > notMario->x + notMario->width / 2) notMario->velX = ENTITY_SPEED;
+                        else notMario->velX = 0;
+                    }
+                    else notMario->timer = -20;
                     mario->velY = JUMP_VELOCITY/2;
                 }
                 else mario->timer = -20;
@@ -269,13 +320,13 @@ void entityFall(EntityNode *entity, MapViewport *map){
 }
 
 bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta) {
-    if(floor(entity->x - entity->velX * timeDelta) == floor(entity->x)) return false;
+    //if(floor(entity->x - entity->velX * timeDelta) == floor(entity->x)) return false;
 
-    int direction = entity->velX > 0 ? 1 : -1;
+    double direction = entity->velX > 0 ? entity->width + 0.05 : -0.05;
     bool result = true;
     int y = entity->y < 0 ? 0 : floor(entity->y);
     while(y < map->map->height){
-        if(getMapBlock(map->map, entity->x, y) != AIR) {
+        if(getMapBlock(map->map, entity->x + direction, y) != AIR) {
             result = false;
             break;
         }
@@ -494,7 +545,7 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         if(itr->x - EPS < 0) itr->velX = abs(itr->velX); 
         if(itr->x + EPS > map->map->length - 1) itr->velX = -abs(itr->velX);
 
-        if(collisionX(itr, timeDelta, map->map)) entityToBlockCollision(itr);
+        if(collisionX(itr, timeDelta, map->map)) entityToBlockCollision(itr, map, timeDelta);
 
         itr->x += itr->velX * timeDelta + itr->accX * timeDelta * timeDelta / 2;
         itr->velX += itr->accX * timeDelta;

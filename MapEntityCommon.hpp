@@ -168,7 +168,7 @@ void setEntityDimensions(EntityNode *entity, int type);
 
 void setEntityStartingVelocity(EntityNode *entity, Map *map);
 
-void entityToBlockCollision(EntityNode *entity);
+void entityToBlockCollision(EntityNode *entity, MapViewport *map, float timeDelta);
 
 void addDeadEntity(EntityNode *entity, MapViewport *map);
 
@@ -181,8 +181,6 @@ void removeAliveEntity(EntityNode *entity, MapViewport *map);
 void clearEntityList(MapViewport *map);
 
 void killEntity(EntityNode *entity, MapViewport *map);
-
-void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map);
 
 void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map);
 
