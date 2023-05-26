@@ -261,6 +261,9 @@ int main(void)
 
         status(score, coins, world, gameTime > 0 ? gameTime : 0, lives);
 
+        if(cutscene == 8)
+            end_message();
+
         frame_draw();
     }
 
