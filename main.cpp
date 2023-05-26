@@ -30,10 +30,8 @@ int main(void)
         frame_draw();
     }
     
-    int world = 1;
+    int world = 2;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
-    char worldC[] = {'0', '\0'};
-    worldC[0] = world + '0';
 
     load_backgrounds();
     load_blocks();
@@ -170,10 +168,10 @@ int main(void)
         case 0: {
             float speed = 10.0f;
             if(key_down(LEFT)){
-                mario->accX = -12;
+                mario->accX = -100;
             }
             else if(key_down(RIGHT)){
-                mario->accX = 12;
+                mario->accX = 100;
             }
             else stopMario(mario, timeDiff);
             if(key_down(UP) && mario->isOnGround) {
@@ -184,7 +182,7 @@ int main(void)
 
             gameTime -= timeDiff;
             moveEntity(mario, timeDiff, map->map);
-            //entityTick(map, mario, timeDiff);
+            entityTick(map, mario, timeDiff);
             break;
         }
         case 1:
@@ -253,7 +251,6 @@ int main(void)
 
             freeMap(map);
             map = mapInit("worlds/" + std::to_string(world));
-            if(world == 4) summonEntity(BOWSER, 137, 9, map->map);
 
             mario = summonEntity(MARIO, 2, 5, map->map);
             shifter = 0;

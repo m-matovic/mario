@@ -102,8 +102,6 @@ void entityToBlockCollision(EntityNode *entity, MapViewport *map, float timeDelt
                 entity->y = floorf(entity->y + entity->height - 0.01);
             }
         }
-
-        entity->velX = 0;
     }
 }
 
@@ -500,31 +498,31 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
             continue;
         }
 
-        itr->isOnGround = true;
-        int pass_through[] = {AIR, COIN_BLOCK, 255, WATER, WATER_TOP};
-        bool checker = true;
-        int nextY = floor(itr->y + itr->height + itr->velY * timeDelta + itr->accY * timeDelta * timeDelta / 2);
-        for(int i = 0; i < sizeof pass_through / sizeof pass_through[0]; i++) 
-            if(getMapBlock(map->map, floor(itr->x + 10 * EPS), nextY) == pass_through[i]) {
-                checker = false;
-                break;
-            }
-        if(!checker) {
-            checker = true;
-            for(int i = 0; i < sizeof pass_through / sizeof pass_through[0]; i++) 
-                if(getMapBlock(map->map, floor(itr->x + itr->width - 10 * EPS), nextY) == pass_through[i]) {
-                    checker = false;
-                    break;
-                }
-            }
-        itr->isOnGround = checker;
+        // itr->isOnGround = true;
+        // int pass_through[] = {AIR, COIN_BLOCK, 255, WATER, WATER_TOP};
+        // bool checker = true;
+        // int nextY = floor(itr->y + itr->height + itr->velY * timeDelta + itr->accY * timeDelta * timeDelta / 2);
+        // for(int i = 0; i < sizeof pass_through / sizeof pass_through[0]; i++) 
+        //     if(getMapBlock(map->map, floor(itr->x + 10 * EPS), nextY) == pass_through[i]) {
+        //         checker = false;
+        //         break;
+        //     }
+        // if(!checker) {
+        //     checker = true;
+        //     for(int i = 0; i < sizeof pass_through / sizeof pass_through[0]; i++) 
+        //         if(getMapBlock(map->map, floor(itr->x + itr->width - 10 * EPS), nextY) == pass_through[i]) {
+        //             checker = false;
+        //             break;
+        //         }
+        //     }
+        // itr->isOnGround = checker;
 
-        if(itr->isOnGround && ceil(itr->y + itr->height) >= VIEWPORT_HEIGHT) itr->isOnGround = false;
+        //if(itr->isOnGround && ceil(itr->y + itr->height) >= VIEWPORT_HEIGHT) itr->isOnGround = false;
 
-        if(itr->isOnGround && itr->velY > 0 && itr->type != PIRANHA_PLANT) {
-            itr->velY = 0;
-            itr->accY = 0;
-        }
+        //if(itr->isOnGround && itr->velY > 0 && itr->type != PIRANHA_PLANT) {
+            //itr->velY = 0;
+            //itr->accY = 0;
+        //}
 
         if(itr->type == KOOPA_PARATROOPA) koopaParatroopaAI(itr);
         if(itr->type == PIRANHA_PLANT) piranhaPlantAI(itr, mario, timeDelta); 
@@ -547,11 +545,11 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         if(itr->x + EPS > map->map->length - 1) itr->velX = -abs(itr->velX);
 
         if(collisionX(itr, timeDelta, map->map)) entityToBlockCollision(itr, map, timeDelta);
-
-        itr->x += itr->velX * timeDelta + itr->accX * timeDelta * timeDelta / 2;
-        itr->velX += itr->accX * timeDelta;
-        itr->y += itr->velY * timeDelta + itr->accY * timeDelta * timeDelta / 2;
-        itr->velY += itr->accY * timeDelta;
+        if(itr->type != MARIO && itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map->map);
+        else if(itr->type == PIRANHA_PLANT) {
+            itr->x += itr->velX * timeDelta;
+            itr->y += itr->velY * timeDelta;
+        }
 
         EntityNode *temp = nullptr;
         if(itr->type == 255 || itr->timer <= -20) temp = itr;

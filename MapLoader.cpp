@@ -345,15 +345,16 @@ Map* loadMap(string location, bool background, Map* loadedMap = nullptr){
                     if(map->entityList == nullptr) map->entityList = summonEntity(block - PIRANHA_PLANT_BLOCK, x, y, map);
                     else summonEntity(block - PIRANHA_PLANT_BLOCK, x, y, map);
 
-                    if(block == PIRANHA_PLANT_BLOCK) block = PIPE_TOP_RIGHT;
+                    if(block == PIRANHA_PLANT_BLOCK) 
+                        block = PIPE_TOP_RIGHT;
                     else if(block == FIRE_BAR_BLOCK) block = QUESTION_BLOCK_EMPTY;
                     else block = AIR;
                 }
                 if(block == BOWSER_BRIDGE && y > 0 && getMapBlock(map, x, y-1) == BOWSER_BRIDGE) {
-                    if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y, map);
-                    else summonEntity(BOWSER, x, y, map);
-                    if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y, map);
-                    else summonEntity(BOWSER, x, y, map);
+                    if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y-2, map);
+                    else summonEntity(BOWSER, x, y-2, map);
+                    if(map->entityList == nullptr) map->entityList = summonEntity(BOWSER, x, y-2, map);
+                    else summonEntity(BOWSER, x, y-2, map);
                     setMapBlock(map, x, y-1, AIR);
                 }
                 setMapBlock(map, x, y, block);

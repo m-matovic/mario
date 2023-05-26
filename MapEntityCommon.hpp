@@ -6,7 +6,7 @@
 #define CHUNK_LEN 32 // The map is split into chunks with dimensions map.height * CHUNK_LEN to avoid memory allocation problems
 #define FIRE_BAR_LENGTH 6
 #define GRAVITY_ACCELERATION 20
-#define ENTITY_SPEED 5.0f
+#define ENTITY_SPEED 4.0f
 #define PROJECTILE_LIFE 5.0f
 #define VIEWPORT_WIDTH 30
 #define VIEWPORT_HEIGHT 15
