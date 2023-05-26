@@ -3,11 +3,11 @@
 #include <string>
 #include <cmath>
 #include "MapEntityCommon.hpp"
-//#include "Movement.h"
+#include "Movement.h"
 #include "sys/time.h"
 #include "ui.h"
 
-#define SCREEN_MARGIN 5
+#define SCREEN_MARGIN 10
 #define LEFT_OFFSET 2.5
 
 static int score = 0;
@@ -56,6 +56,8 @@ int main(void)
 
     float gameTime = 122.0f;
     float startTime = currentTime;
+    mario->isOnGround = false;
+    mario->accY = 20;
 
     while(!should_end())
     {
@@ -113,13 +115,22 @@ int main(void)
         {
         case 0: {
             float speed = 10.0f;
-            if(key_down(LEFT)) mario->velX = -speed;
-            else if(key_down(RIGHT)) mario->velX = speed;
-            else mario->velX = 0;
-            if(key_down(UP)) mario->velY = -JUMP_VELOCITY;
+            if(key_down(LEFT)){
+                mario->accX = -12;
+            }
+            else if(key_down(RIGHT)){
+                mario->accX = 12;
+            }
+            else stopMario(mario, timeDiff);
+            if(key_down(UP) && mario->isOnGround) {
+                mario->y -= 0.01;
+                mario->velY = -15;
+                mario->isOnGround = false;
+            }
 
             gameTime -= timeDiff;
-            entityTick(map, mario, timeDiff);
+            moveEntity(mario, timeDiff, map->map);
+            //entityTick(map, mario, timeDiff);
             break;
         }
         case 1:

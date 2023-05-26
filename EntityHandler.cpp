@@ -1,4 +1,5 @@
 #include "Movement.h"
+#include "Movement.c"
 #include <cmath>
 #include <cstdlib>
 #include "MapEntityCommon.hpp"
