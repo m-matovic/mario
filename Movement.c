@@ -77,20 +77,14 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
                 int right = getMapBlock(map, (int) floorf(entity->x + entity->width - 0.05), (int)floorf(newY));
                 switch (left) {
                     case BRICK:
-                        setMapBlock(map, (int) floorf(entity->x), (int) floorf(newY), AIR);
-                        summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY) + 1, map);
-                        break;
-                    case BRICK_MUSHROOM:
-                        summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x), (int) floorf(newY) + 3, map);
+                        setViewportBlock(getViewport(map), (int) floorf(entity->x), (int) floorf(newY), AIR);
+                        summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY) - 1, map);
                         break;
                 }
                 switch (right) {
                     case BRICK:
-                        setMapBlock(map, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY), AIR);
-                        summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY) + 1, map);
-                        break;
-                    case BRICK_MUSHROOM:
-                        summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY) + 1, map);
+                        setViewportBlock(getViewport(map), (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY), AIR);
+                        summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY) - 1, map);
                         break;
                 }
                 entity->velY = 0;
