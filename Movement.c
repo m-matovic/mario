@@ -55,7 +55,7 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map){
             int middle = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
             int bottom = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
             if((top == FLAG_POLE || middle == FLAG_POLE || bottom == FLAG_POLE) && entity->type == MARIO){
-                entity->timer = 1;
+                entity->timer = 3;
             } else{
                 if (entity->velX < 0){
                     entity->x = ceilf(entity->x + entity->velX*timeDiff);

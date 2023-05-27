@@ -30,7 +30,7 @@ int main(void)
         frame_draw();
     }
     
-    int world = 2;
+    int world = 4;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
@@ -42,6 +42,7 @@ int main(void)
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
     EntityNode *mario = summonEntity(MARIO, 120, 5, map->map);
+    summonEntity(FIREFLOWER, 120, 7, map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
@@ -55,6 +56,7 @@ int main(void)
     float gameTime = 122.0f;
     float startTime = currentTime;
     bool fired = false;
+    int lastState = 0;
 
     while(!should_end())
     {
@@ -115,11 +117,11 @@ int main(void)
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
             if(itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
-        if(cutscene == 1) draw_entity(POLE, 1, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        if(cutscene == 1) draw_entity(POLE + mario->timer * 4, 1, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
         else if(mario->timer <= -20) draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velY != 0) draw_entity(JUMPING, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velX != 0) draw_entity(WALKING, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else draw_entity(STANDING, ceil(direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velY != 0) draw_entity(JUMPING + mario->timer * 4, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velX != 0) draw_entity(WALKING + mario->timer * 4, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else draw_entity(STANDING + mario->timer * 4, ceil(direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
 
         status(score, coins, world, gameTime > 0 ? gameTime : 0, lives);
 
@@ -133,7 +135,7 @@ int main(void)
         double timeDiff = newTime - currentTime + (newTime < currentTime ? 10 : 0);
         currentTime = newTime;
 
-        if(mario->timer == 1){
+        if(mario->timer == 3){
             if(world < 4) cutscene = 1;
             else {
                 for(EntityNode *itr = map->map->entityList; itr != nullptr; itr = itr->next)
@@ -148,6 +150,7 @@ int main(void)
                     itr = itr->next;
                     if(prev->type == HAMMER || prev->type == FIREBALL) removeAliveEntity(prev, map);
                 }
+
                 desY = round(mario->y + mario->height + 1);
                 desX = floor(mario->x - 1);
                 mario->velX = 0;
@@ -157,8 +160,9 @@ int main(void)
                 score += gameTime * 125;
                 storeScore(score);
             }
-            mario->timer = 0;
+            mario->timer = lastState;
         }
+        else lastState = mario->timer;
 
         switch (cutscene)
         {
@@ -180,7 +184,7 @@ int main(void)
                 mario->velY = -15;
                 mario->isOnGround = false;
             }
-            if(key_down(F_KEY) && fired == false) {
+            if(key_down(F_KEY) && fired == false && mario->timer == 2) {
                 EntityNode *fire = summonEntity(FIRE, mario->x + (direction > 0 ? 0.5 : -0.5), mario->y -0.1, map->map);
                 fire->velX = (direction > 0 ? 1 : -1) * ENTITY_SPEED;
                 fired = true;
@@ -196,7 +200,7 @@ int main(void)
             mario->velY = 5;
             mario->y += mario->velY * timeDiff;
             score += 5000 * timeDiff;
-            if(getMapBlock(map->map, mario->x + mario->width, mario->y + mario->velY * timeDiff) == BRICK_STAIR) {
+            if(getMapBlock(map->map, mario->x + mario->width, mario->y + mario->height - 1 + mario->velY * timeDiff) == BRICK_STAIR) {
                 cutscene = 2; 
                 mario->velY = 0;
                 mario->velX = 0;

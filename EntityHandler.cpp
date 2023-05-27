@@ -53,7 +53,7 @@ void setEntityStartingVelocity(EntityNode *entity, Map *map) {
     entity->velX = -ENTITY_SPEED;
     entity->accX = 0;
     entity->velY = 0;
-    if(entity->type == PLATFORM || entity->type == PIRANHA_PLANT || entity->type == FIRE_BAR) entity->velX = 0;
+    if(entity->type == PLATFORM || entity->type == PIRANHA_PLANT || entity->type == FIRE_BAR || entity->type == FIREFLOWER) entity->velX = 0;
     entity->isOnGround = true;
     entity->accY = 0;
 }
@@ -90,18 +90,20 @@ void entityToBlockCollision(EntityNode *entity, MapViewport *map, float timeDelt
         int bottom = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
         if(top == FLAG_POLE || middle == FLAG_POLE || bottom == FLAG_POLE) {
             entity->x = floor(newX) - entity->width / 2;
-            entity->timer = 1;
+            entity->timer = 3;
         }
         else if(top == AXE || middle == AXE || bottom == AXE){
-            entity->timer = 1;
+            entity->timer = 3;
             entity->x = floor(newX);
             if(getMapBlock(map->map, floorf(newX), floorf(entity->y)) == AXE) {
                 setViewportBlock(map, floorf(newX), floorf(entity->y), AIR);
                 entity->y = floorf(entity->y);
+                if(entity->height > 1) entity->y--;
             }
             else if(getMapBlock(map->map, floorf(newX), floorf(entity->y + entity->height - 0.01)) == AXE) {
                 setViewportBlock(map, floorf(newX), floorf(entity->y + entity->height - 0.01), AIR);
                 entity->y = floorf(entity->y + entity->height - 0.01);
+                if(entity->height > 1) entity->y--;
             }
         }
     }
@@ -277,9 +279,16 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
     if(mario != nullptr){
         switch(notMario->type){
             case MUSHROOM_ENTITY:
-            case STAR_ENTITY:
-            case ONE_UP_ENTITY:
+                mario->timer = 1;
+                if(mario->height <= 1) mario->y--;
+                mario->height = 1.9;
+                notMario->type = 255;
+                return;
             case FIREFLOWER:
+                mario->timer = 2;
+                if(mario->height <= 1) mario->y--;
+                mario->height = 1.9;
+                notMario->type = 255;
                 return;
             default:
                 if((mario->velY > 0 && mario->y < notMario->y) || mario->y + mario->height <= notMario->y){
@@ -288,7 +297,14 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                     int unkillableEntities[] = {FIRE_BAR, HAMMER, FIREBALL, BOWSER};
                     for(int i = 0; i < sizeof unkillableEntities/sizeof unkillableEntities[0]; i++) 
                         if(notMario->type == unkillableEntities[i]){
-                            mario->timer = -20;
+                            if(mario->entity != nullptr) return;
+                            if(mario->timer == 0) mario->timer = -20;
+                            else {
+                                mario->timer = 0;
+                                mario->height--;
+                                mario->entity = malloc(sizeof(float));
+                                *(float*) mario->entity = INVINSIBLE_PERIOD;
+                            }
                             mario->velX = 0;
                             return;
                         }
@@ -313,7 +329,16 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                         mario->isOnGround = true;
                         return;
                     }
-                    else notMario->timer = -20;
+                    else {
+                        if(mario->entity != nullptr) return;
+                        if(mario->timer == 0) mario->timer = -20;
+                        else {
+                            mario->timer = 0;
+                            mario->height--;
+                            mario->entity = malloc(sizeof(float));
+                            *(float*) mario->entity = INVINSIBLE_PERIOD;
+                        }
+                    }
 
                     *score += 1000;
                     mario->velY = -JUMP_VELOCITY/2;
@@ -321,8 +346,15 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                     notMario->velY = 0;
                 }
                 else {
+                    if(mario->entity != nullptr) return;
                     if(notMario->type == 255 || (notMario->type == FIRE_BAR && notMario->timer > 0) || notMario->type == PLATFORM) return;
-                    mario->timer = -20;
+                    if(mario->timer == 0) mario->timer = -20;
+                    else {
+                        mario->timer = 0;
+                        mario->height--;
+                        mario->entity = malloc(sizeof(float));
+                        *(float*) mario->entity = INVINSIBLE_PERIOD;
+                    }
                     mario->velX = 0;
                 }
                 return;
@@ -550,6 +582,32 @@ void platformAI(EntityNode *entity, MapViewport *map){
 void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score){
     EntityNode *itr = map->map->entityList;
     int AIless[] = {MARIO, MUSHROOM_ENTITY, STAR_ENTITY, FIREFLOWER, KOOPA_SHELL};
+
+    if(mario->timer >= 0) {
+        if(mario->entity != nullptr){
+            *(float*) mario->entity -= timeDelta;
+            if(*(float*) mario->entity < 0) {
+                free(mario->entity);
+                mario->entity = nullptr;
+            }
+        }
+
+        int left = getMapBlock(map->map, mario->x, mario->y + mario->height + 0.5);
+        int right = getMapBlock(map->map, mario->x + mario->width, mario->y + mario->height + 0.5);
+
+        if(left == AXE || right == AXE){
+            mario->timer = 3;
+            if(left == AXE) {
+                setViewportBlock(map, mario->x, mario->y + mario->height + 0.5, AIR);
+                mario->x = floorf(mario->x);
+            }
+            else if(right == AXE) {
+                setViewportBlock(map, mario->x + mario->width, mario->y + mario->height + 0.5, AIR);
+                mario->x = floorf(mario->x + mario->width);
+            }
+            mario->y = floor(mario->y) + 2;
+        }
+    }
 
     while(itr != nullptr){
         if((map->x - RENDER_DISTANCE > itr->x || itr->x > map->x + VIEWPORT_WIDTH + RENDER_DISTANCE) && itr->type != PLATFORM && itr->type != FIRE_BAR) {
