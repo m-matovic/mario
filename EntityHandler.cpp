@@ -38,6 +38,10 @@ void setEntityDimensions(EntityNode *entity, int type){
             entity->height = 2.0f;
             entity->width = 2.0f;
             break;
+        case MARIO:
+            entity->height = 0.9f;
+            entity->width = 1;
+            break;
         default:
             entity->height = 1.0f;
             entity->width = 1.0f;
@@ -130,6 +134,7 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             entity->velY = 0;
             entity->accX = 0;
             entity->accY = 0;
+            entity->timer = 0;
         
             entity->entity = malloc(sizeof(Rotation));
             Rotation *rotation = static_cast<Rotation*>(entity->entity);
@@ -239,8 +244,11 @@ void clearEntityList(MapViewport *map){
 }
 
 void killEntity(EntityNode *entity, MapViewport *map){
-    int unkillableEntities[] = {PLATFORM, HAMMER, FIREBALL};
-    for(int i = 0; i < sizeof unkillableEntities / sizeof unkillableEntities[0]; i++) if(entity->type == unkillableEntities[i]) return;
+    int unkillableEntities[] = {PLATFORM, HAMMER, FIREBALL, BOWSER};
+    for(int i = 0; i < sizeof unkillableEntities / sizeof unkillableEntities[0]; i++) if(entity->type == unkillableEntities[i]) {
+        entity->timer = 3;
+        return;
+    }
 
     if(entity == map->map->entityList) {
         map->map->entityList = entity->next;

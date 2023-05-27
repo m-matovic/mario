@@ -9,7 +9,7 @@ BIN = mario
 debug: CXXFLAGS += -g
 debug: main
 
-main: main.o ui.o MapLoader.o EntityHandler.o
+main: main.o ui.o MapLoader.o EntityHandler.o Movement.o
 	${CXX} -o ${BIN} main.o ui.o EntityHandler.o MapLoader.o ${CXXFLAGS} ${LIBS}
 
 main.o: main.cpp MapEntityCommon.hpp ui.h Movement.h
@@ -23,6 +23,9 @@ MapLoader.o: MapLoader.cpp MapEntityCommon.hpp
 
 EntityHandler.o: EntityHandler.cpp MapEntityCommon.hpp
 	${CXX} -c EntityHandler.cpp ${CXXFLAGS} ${LIBS}
+
+Movement.o: Movement.c Movement.hpp
+	${CXX} -c Movement.c ${CXXFLAGS} ${LIBS}
 
 clean:
 	rm *.o

@@ -30,7 +30,7 @@ int main(void)
         frame_draw();
     }
     
-    int world = 1;
+    int world = 2;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
@@ -41,7 +41,7 @@ int main(void)
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
-    EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
+    EntityNode *mario = summonEntity(MARIO, 120, 5, map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
@@ -180,7 +180,7 @@ int main(void)
                 mario->isOnGround = false;
             }
             if(key_down(F_KEY) && fired == false) {
-                EntityNode *fire = summonEntity(FIRE, mario->x + (direction > 0 ? mario->width + 0.5 : -0.5), mario->y, map->map);
+                EntityNode *fire = summonEntity(FIRE, mario->x + (direction > 0 ? 0.5 : -0.5), mario->y -0.1, map->map);
                 fire->velX = (direction > 0 ? 1 : -1) * ENTITY_SPEED;
                 fired = true;
             }

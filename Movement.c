@@ -12,8 +12,8 @@
 
 bool isLanding(EntityNode *entity, float timeDiff, Map *map){
     float newFeet = entity->y + entity->height + entity->velY * timeDiff;
-    int left = getMapBlock(map, (int)floorf(entity->x + 0.2), (int) floorf(newFeet));
-    int right = getMapBlock(map, (int) floorf(entity->x + entity->width - 0.2), (int) floorf(newFeet));
+    int left = getMapBlock(map, (int)floorf(entity->x), (int) floorf(newFeet));
+    int right = getMapBlock(map, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newFeet));
     if ((left == AIR || left == 255) && (right == AIR || right == 255)){
         return false;
     }
@@ -62,7 +62,7 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map){
                     entity->velX = 0;
                     entity->accX = 0;
                 } else{
-                    entity->x = floorf(entity->x + entity->velX * timeDiff + entity->height) - entity->width;
+                    entity->x = floorf(entity->x + entity->velX * timeDiff + entity->width) - entity->width;
                     entity->velX = 0;
                     entity->accX = 0;
                 }
@@ -75,35 +75,16 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map){
                 float newY = entity->y + entity->velY * timeDiff;
                 int left = getMapBlock(map->map, (int) floorf(entity->x), (int) floorf(newY));
                 int right = getMapBlock(map->map, (int) floorf(entity->x + entity->width - 0.05), (int)floorf(newY));
-                Block L = getBlock(left);
-                Block R = getBlock(right);
-                if(L.content == MUSHROOM){
-                    summonEntity(MUSHROOM_ENTITY, (int ) floorf(entity->x), (int ) floorf(newY - 1), map->map);
-                    setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
-                }
-                 else if(L.content == ONE_UP){
-                    summonEntity(ONE_UP_ENTITY, (int ) floorf(entity->x), (int ) floorf(newY - 1), map->map);
-                    setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
-                }
-                else if(L.content == STAR){
-                    summonEntity(STAR_ENTITY, (int ) floorf(entity->x), (int ) floorf(newY - 1), map->map);
-                    setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
-                }
-                if(R.content == MUSHROOM){
-                    summonEntity(MUSHROOM_ENTITY, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY - 1), map->map);
-                    setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
-                } else if (R.content == ONE_UP){
-                    summonEntity(ONE_UP_ENTITY, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY - 1), map->map);
-                    setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
-                } else if (R.content == STAR){
-                    summonEntity(STAR_ENTITY, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY - 1), map->map);
-                    setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
-                }
-                if (L.type == BRICK){
-                    setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
-                }
-                if (R.type == BRICK){
-                    setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
+                if(entity->type == MARIO){
+                    switch (left) {
+                        case BRICK:
+                            setViewportBlock(map, (int) floorf(entity->x), (int) floorf(newY), AIR);
+                            break;
+                    }
+                    switch (right) {
+                        case BRICK:
+                            setViewportBlock(map, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY), AIR);                        break;
+                    }
                 }
                 entity->velY = 0;
             } else{
@@ -111,17 +92,8 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map){
             }
             entity->velY += entity->accY * timeDiff;
         } else{
-            float newFeet = entity->y + entity->height + entity->velY * timeDiff;
-            int left = getMapBlock(map->map, (int)floorf(entity->x + 0.2), (int) floorf(newFeet));
-            int right = getMapBlock(map->map, (int) floorf(entity->x + entity->width - 0.2), (int) floorf(newFeet));
-            Block L = getBlock(left);
-            Block R = getBlock(right);
-            if((L.type == WATER_TOP || R.type == WATER_TOP) && entity->type == MARIO){
-                entity->timer = -20;
-            }
             entity->isOnGround = true;
             entity->velY = 0;
-            entity->y = ceilf(entity->y);
         }
     }                                   //Kretanje kao i provera da li smo sleteli
 
