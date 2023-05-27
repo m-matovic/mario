@@ -184,7 +184,7 @@ void clearEntityList(MapViewport *map);
 
 void killEntity(EntityNode *entity, MapViewport *map);
 
-void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map);
+void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map, int *score);
 
 void entityFall(EntityNode *entity, MapViewport *map);
 
@@ -204,6 +204,6 @@ void projectileAI(EntityNode *entity, MapViewport *map, float timeDelta);
 
 void platformAI(EntityNode *entity, MapViewport *map);
 
-void entityTick(MapViewport *map, EntityNode *mario, float timeDelta);
+void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score);
 
 #endif

@@ -122,9 +122,9 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map){
     }
 }
 
-void eECollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map){
+void eECollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map, int *score){
     if(entity1->x + entity1->width > entity2->x && entity1->x < entity2->x + entity2->width && entity1->y + entity1->height > entity2->y && entity1->y < entity2->y + entity2->width){
-        entityToEntityCollision(entity1, entity2, map);
+        entityToEntityCollision(entity1, entity2, map, score);
     }
 }
 

@@ -154,6 +154,7 @@ int main(void)
                 mario->velY = 0;
                 direction = -EPS;
                 cutscene = 4;
+                score += gameTime * 125;
                 storeScore(score);
             }
             mario->timer = 0;
@@ -188,7 +189,7 @@ int main(void)
             
 
             gameTime -= timeDiff;
-            entityTick(map, mario, timeDiff);
+            entityTick(map, mario, timeDiff, &score);
             break;
         }
         case 1:

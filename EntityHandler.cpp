@@ -161,7 +161,7 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
     switch(type){
         case PIRANHA_PLANT: {
             entity->x -= 0.5f;
-            entity->y += entity->height - 1;
+            entity->y -= entity->height - 0.5;
             entity->entity = malloc(sizeof(State));
             State *state = static_cast<State*>(entity->entity);
             entity->timer = 0;
@@ -262,7 +262,7 @@ void killEntity(EntityNode *entity, MapViewport *map){
     entity->velY = -JUMP_VELOCITY/2;
 }
 
-void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map){
+void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map, int *score){
     EntityNode *mario = nullptr;
     EntityNode *notMario = nullptr;
     if(entity1->type == MARIO) {
@@ -314,6 +314,8 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                         return;
                     }
                     else notMario->timer = -20;
+
+                    *score += 1000;
                     mario->velY = -JUMP_VELOCITY/2;
                     mario->y -= 0.1;
                     notMario->velY = 0;
@@ -326,7 +328,6 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                 return;
         }
     }
-
     else {
         if((entity1->type == KOOPA_SHELL) != (entity2->type == KOOPA_SHELL)){
             if(entity1->type == KOOPA_SHELL) entity2->timer = -20; 
@@ -335,10 +336,12 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
         }
         if((entity1->type == FIRE_BAR) != (entity2->type == FIRE_BAR)){
             if(entity1->type == FIRE_BAR) {
+                if(entity1->timer > 0) *score += 500;
                 entity1->type = 255;
                 entity2->timer = -20; 
             }
             else {
+                if(entity2->timer > 0) *score += 500;
                 entity2->type = 255;
                 entity1->timer = -20;
             }
@@ -544,7 +547,7 @@ void platformAI(EntityNode *entity, MapViewport *map){
     }
 }
 
-void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
+void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score){
     EntityNode *itr = map->map->entityList;
     int AIless[] = {MARIO, MUSHROOM_ENTITY, STAR_ENTITY, FIREFLOWER, KOOPA_SHELL};
 
@@ -587,10 +590,9 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         while(itr2 != nullptr){
             EntityNode *prev = itr2;
             itr2 = itr2->next;
-            if(itr->type != PLATFORM || prev->type != PLATFORM) eECollision(itr, prev, map);
+            if(itr->type != PLATFORM || prev->type != PLATFORM) eECollision(itr, prev, map, score);
         }
         
-
         EntityNode *temp = nullptr;
         if(itr->type == 255 || itr->timer <= -20) temp = itr;
         itr = itr->next;

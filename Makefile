@@ -24,7 +24,7 @@ MapLoader.o: MapLoader.cpp MapEntityCommon.hpp
 EntityHandler.o: EntityHandler.cpp MapEntityCommon.hpp
 	${CXX} -c EntityHandler.cpp ${CXXFLAGS} ${LIBS}
 
-Movement.o: Movement.c Movement.hpp
+Movement.o: Movement.c Movement.h
 	${CXX} -c Movement.c ${CXXFLAGS} ${LIBS}
 
 clean:
