@@ -186,6 +186,9 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
             platform->prev = nullptr;
             break;
         }
+        case FIRE:
+            entity->type = FIRE_BAR;
+            entity->timer = 5;
         default:
             entity->entity = nullptr;
             break;
@@ -236,7 +239,7 @@ void clearEntityList(MapViewport *map){
 }
 
 void killEntity(EntityNode *entity, MapViewport *map){
-    int unkillableEntities[] = {FIRE_BAR, PLATFORM, HAMMER, FIREBALL};
+    int unkillableEntities[] = {PLATFORM, HAMMER, FIREBALL};
     for(int i = 0; i < sizeof unkillableEntities / sizeof unkillableEntities[0]; i++) if(entity->type == unkillableEntities[i]) return;
 
     if(entity == map->map->entityList) {
@@ -272,8 +275,9 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                 return;
             default:
                 if((mario->velY > 0 && mario->y < notMario->y) || mario->y + mario->height <= notMario->y){
+                    if(notMario->type == 255 || (notMario->type == FIRE_BAR && notMario->timer > 0)) return;
 
-                    int unkillableEntities[] = {FIRE_BAR, PLATFORM, HAMMER, FIREBALL, BOWSER};
+                    int unkillableEntities[] = {FIRE_BAR, HAMMER, FIREBALL, BOWSER};
                     for(int i = 0; i < sizeof unkillableEntities/sizeof unkillableEntities[0]; i++) 
                         if(notMario->type == unkillableEntities[i]){
                             mario->timer = -20;
@@ -294,12 +298,20 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                         else if(marioMiddle > notMario->x + notMario->width / 2) notMario->velX = -2*ENTITY_SPEED;
                         else notMario->velX = 0;
                     }
+                    else if(notMario->type == PLATFORM){
+                        mario->y = notMario->y - mario->height - EPS;
+                        mario->velY = 0;
+                        mario->accY = 0;
+                        mario->isOnGround = true;
+                        return;
+                    }
                     else notMario->timer = -20;
                     mario->velY = -JUMP_VELOCITY/2;
                     mario->y -= 0.1;
                     notMario->velY = 0;
                 }
                 else {
+                    if(notMario->type == 255 || (notMario->type == FIRE_BAR && notMario->timer > 0) || notMario->type == PLATFORM) return;
                     mario->timer = -20;
                     mario->velX = 0;
                 }
@@ -313,6 +325,20 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
             else entity1->timer = -20;
             return;
         }
+        if((entity1->type == FIRE_BAR) != (entity2->type == FIRE_BAR)){
+            if(entity1->type == FIRE_BAR) {
+                entity1->type = 255;
+                entity2->timer = -20; 
+            }
+            else {
+                entity2->type = 255;
+                entity1->timer = -20;
+            }
+            return;
+        }
+        if(entity1->type == FIRE_BAR && entity2->type == FIRE_BAR) {
+            return;
+        }
 
         entity1->velX = -entity1->velX;
         entity2->velX = -entity2->velX;
@@ -320,7 +346,8 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
 }
 
 void entityFall(EntityNode *entity, MapViewport *map){
-    int floatingEntities[] = {PIRANHA_PLANT, FIRE_BAR, HAMMER, FIREBALL, PLATFORM};
+    if(entity->type == FIRE_BAR && entity->timer == 0) return;
+    int floatingEntities[] = {PIRANHA_PLANT, HAMMER, FIREBALL, PLATFORM};
     for(int i = 0; i < sizeof(floatingEntities)/sizeof(floatingEntities[0]); i++)
         if(floatingEntities[i] == entity->type) return;
 
@@ -410,15 +437,18 @@ void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
     }
 }
 
-void koopaParatroopaAI(EntityNode *entity){
-    if(entity->isOnGround) {
-        entity->velY = -JUMP_VELOCITY;
-        entity->isOnGround = false;
+void jumperAI(EntityNode *entity, float timeDelta){
+    if(entity->type == FIRE_BAR) {
+        entity->timer -= timeDelta;
+        if(entity->timer <= 0) entity->type = 255;
+        if(entity->isOnGround) entity->velY = -JUMP_VELOCITY/2;
     }
+    else if(entity->isOnGround) entity->velY = -JUMP_VELOCITY;
     
+    entity->isOnGround = false;
 }
 
-void fireballAI(EntityNode *entity, float timeDelta){
+void firebarAI(EntityNode *entity, float timeDelta){
     Rotation *rotation = static_cast<Rotation*> (entity->entity);
     float prevAngle = rotation->angle;
     rotation->angle += FIRE_BAR_ANGULAR_VELOCITY * timeDelta;
@@ -485,7 +515,7 @@ void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewpor
 
 void projectileAI(EntityNode *entity, MapViewport *map, float timeDelta){
     entity->timer -= timeDelta;
-    if(entity->timer <= 0 || entity->isOnGround) entity->type = 255;
+    if(entity->timer <= 0 || (entity->type == HAMMER && entity->isOnGround)) entity->type = 255;
 }
 
 void platformAI(EntityNode *entity, MapViewport *map){
@@ -516,10 +546,11 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
             continue;
         }
 
-        if(itr->type == KOOPA_PARATROOPA) koopaParatroopaAI(itr);
+        if(itr->type == KOOPA_PARATROOPA) jumperAI(itr, timeDelta);
         if(itr->type == PIRANHA_PLANT) piranhaPlantAI(itr, mario, timeDelta); 
         else if(itr->type == HAMMER || itr->type == FIREBALL) projectileAI(itr, map, timeDelta);
-        else if(itr->type == FIRE_BAR) fireballAI(itr, timeDelta);
+        else if(itr->type == FIRE_BAR && itr->timer > 0) jumperAI(itr, timeDelta);
+        else if(itr->type == FIRE_BAR && itr->timer == 0) firebarAI(itr, timeDelta);
         else if(itr->type == BOWSER) bowserAI(itr, mario, timeDelta, map);
         else if(itr->type == PLATFORM) platformAI(itr, map);
         else {
@@ -538,15 +569,18 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
 
         if(collisionX(itr, timeDelta, map->map)) entityToBlockCollision(itr, map, timeDelta);
         
+
+        if(itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map);
+        else if(itr->type == PIRANHA_PLANT) itr->y += itr->velY * timeDelta;
+
+        if(itr->type == FIRE_BAR && itr->timer > 0) moveEntity(itr, timeDelta, map);
+
         EntityNode *itr2 = itr->next;
         while(itr2 != nullptr){
             EntityNode *prev = itr2;
             itr2 = itr2->next;
             if(itr->type != PLATFORM || prev->type != PLATFORM) eECollision(itr, prev, map);
         }
-
-        if(itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map);
-        else if(itr->type == PIRANHA_PLANT) itr->y += itr->velY * timeDelta;
         
 
         EntityNode *temp = nullptr;

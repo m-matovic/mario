@@ -61,7 +61,7 @@ enum BlockContent {
 enum Entities {
     PIRANHA_PLANT, BLOOBER, BUZZY_BEETLE, CHEEP_CHEEP, FIRE_BAR, HAMMER_BROTHER, KOOPA_PARATROOPA,
     KOOPA_TROOPA, LAKITU, GOOMBA, SPINY, PLATFORM, MUSHROOM_ENTITY, STAR_ENTITY, ONE_UP_ENTITY, FIREFLOWER,
-    KOOPA_SHELL, BOWSER, HAMMER, FIREBALL, MARIO
+    KOOPA_SHELL, BOWSER, HAMMER, FIREBALL, MARIO, FIRE
 };
 
 struct EntityNode;
@@ -194,9 +194,9 @@ void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map, float time
 
 void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta);
 
-void koopaParatroopaAI(EntityNode *entity);
+void jumperAI(EntityNode *entity);
 
-void fireballAI(EntityNode *entity, float timeDelta);
+void firebarAI(EntityNode *entity, float timeDelta);
 
 void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewport *map);
 

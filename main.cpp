@@ -30,7 +30,7 @@ int main(void)
         frame_draw();
     }
     
-    int world = 4;
+    int world = 3;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
@@ -41,7 +41,7 @@ int main(void)
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
-    EntityNode *mario = summonEntity(MARIO, 120, 5, map->map);
+    EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
@@ -54,6 +54,7 @@ int main(void)
 
     float gameTime = 122.0f;
     float startTime = currentTime;
+    bool fired = false;
 
     while(!should_end())
     {
@@ -93,9 +94,6 @@ int main(void)
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
             if(itr->type != FIRE_BAR && itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
-
-        if(mario->velX > EPS) direction = EPS;
-        else if(mario->velX < -EPS) direction = -EPS;
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
@@ -172,11 +170,22 @@ int main(void)
                 mario->accX = 100;
             }
             else if(timer > -20) stopMario(mario, timeDiff);
+
+            if(mario->velX > EPS) direction = EPS;
+            else if(mario->velX < -EPS) direction = -EPS;
+
             if(key_down(UP) && mario->isOnGround && mario->timer > -2) {
                 mario->y -= 0.01;
                 mario->velY = -15;
                 mario->isOnGround = false;
             }
+            if(key_down(F_KEY) && fired == false) {
+                EntityNode *fire = summonEntity(FIRE, mario->x + (direction > 0 ? mario->width + 0.5 : -0.5), mario->y, map->map);
+                fire->velX = (direction > 0 ? 1 : -1) * ENTITY_SPEED;
+                fired = true;
+            }
+            else if(!key_down(F_KEY)) fired = false;
+            
 
             gameTime -= timeDiff;
             entityTick(map, mario, timeDiff);
@@ -257,7 +266,6 @@ int main(void)
 
         if(mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1 - shifter > 0 && shifter < mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1) shifter = mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1;
         if(mario->x - map->x - SCREEN_MARGIN - 1 - shifter < 0 && shifter > mario->x - map->x - SCREEN_MARGIN - 1) shifter = mario->x - map->x - SCREEN_MARGIN - 1;
-
 
         if(shifter > 1) {
             if(shiftRight(map)) shifter -= 1;
