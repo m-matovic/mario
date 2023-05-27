@@ -45,15 +45,15 @@ bool collisionY(EntityNode *entity, float timeDiff, Map *map){
     return true;
 }
 
-void moveEntity(EntityNode *entity, float timeDiff, Map *map){
+void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map){
     if (entity->velX != 0){
-        if (!collisionX(entity, timeDiff, map)){
+        if (!collisionX(entity, timeDiff, map->map)){
             entity->x += entity->velX * timeDiff;
         } else{
             float newX = entity->x + entity->velX * timeDiff + ((entity->velX > 0) ? entity->width : 0);
-            int top = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y));
-            int middle = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
-            int bottom = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
+            int top = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y));
+            int middle = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
+            int bottom = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
             if((top == FLAG_POLE || middle == FLAG_POLE || bottom == FLAG_POLE) && entity->type == MARIO){
                 entity->timer = 1;
             } else{
@@ -70,21 +70,21 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
         }
     }
     if (!entity->isOnGround){
-        if (!isLanding(entity, timeDiff, map)){
-            if (collisionY(entity, timeDiff, map) && entity->velY < 0){
+        if (!isLanding(entity, timeDiff, map->map)){
+            if (collisionY(entity, timeDiff, map->map) && entity->velY < 0){
                 float newY = entity->y + entity->velY * timeDiff;
-                int left = getMapBlock(map, (int) floorf(entity->x), (int) floorf(newY));
-                int right = getMapBlock(map, (int) floorf(entity->x + entity->width - 0.05), (int)floorf(newY));
+                int left = getMapBlock(map->map, (int) floorf(entity->x), (int) floorf(newY));
+                int right = getMapBlock(map->map, (int) floorf(entity->x + entity->width - 0.05), (int)floorf(newY));
                 switch (left) {
                     case BRICK:
-                        setViewportBlock(getViewport(map), (int) floorf(entity->x), (int) floorf(newY), AIR);
-                        summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY) - 1, map);
+                        setViewportBlock(map, (int) floorf(entity->x), (int) floorf(newY), AIR);
+                        //summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY) - 1, map->map);
                         break;
                 }
                 switch (right) {
                     case BRICK:
-                        setViewportBlock(getViewport(map), (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY), AIR);
-                        summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY) - 1, map);
+                        setViewportBlock(map, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY), AIR);
+                        //summonEntity(MUSHROOM_ENTITY, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY) - 1, map->map);
                         break;
                 }
                 entity->velY = 0;
@@ -95,7 +95,6 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
         } else{
             entity->isOnGround = true;
             entity->velY = 0;
-            entity->y = ceilf(entity->y);
         }
     }                                   //Kretanje kao i provera da li smo sleteli
 
@@ -115,8 +114,8 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
 
     if (entity->isOnGround){            //Provera da li treba da krenemo da padamo
         float newFeet = entity->y + entity->height + 0.5;
-        int left = getMapBlock(map, (int)floorf(entity->x + 0.2), (int) floorf(newFeet));
-        int right = getMapBlock(map, (int) floorf(entity->x + entity->width - 0.2), (int) floorf(newFeet));
+        int left = getMapBlock(map->map, (int)floorf(entity->x + 0.2), (int) floorf(newFeet));
+        int right = getMapBlock(map->map, (int) floorf(entity->x + entity->width - 0.2), (int) floorf(newFeet));
         if (left == AIR && right == AIR){
             entity->isOnGround = false;
             entity->velY += entity->accY * timeDiff;
@@ -124,9 +123,9 @@ void moveEntity(EntityNode *entity, float timeDiff, Map *map){
     }
 }
 
-void eECollision(EntityNode *entity1, EntityNode *entity2, Map *map){
+void eECollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map){
     if(entity1->x + entity1->width > entity2->x && entity1->x < entity2->x + entity2->width && entity1->y + entity1->height > entity2->y && entity1->y < entity2->y + entity2->width){
-        entityToEntityCollision(entity1, entity2, getViewport(map));
+        entityToEntityCollision(entity1, entity2, map);
     }
 }
 

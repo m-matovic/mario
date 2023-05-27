@@ -30,7 +30,7 @@ int main(void)
         frame_draw();
     }
     
-    int world = 1;
+    int world = 4;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
@@ -41,7 +41,7 @@ int main(void)
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
-    EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
+    EntityNode *mario = summonEntity(MARIO, 120, 5, map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
@@ -54,8 +54,6 @@ int main(void)
 
     float gameTime = 122.0f;
     float startTime = currentTime;
-    mario->isOnGround = false;
-    mario->accY = 20;
 
     while(!should_end())
     {
@@ -166,35 +164,22 @@ int main(void)
         switch (cutscene)
         {
         case 0: {
-            float speed = 10.0f;
-            if(key_down(LEFT)){
+
+            if(key_down(LEFT) && mario->timer > -20){
                 mario->accX = -100;
             }
-            else if(key_down(RIGHT)){
+            else if(key_down(RIGHT) && mario->timer > -20){
                 mario->accX = 100;
             }
-            else stopMario(mario, timeDiff);
-            if(key_down(UP) && mario->isOnGround) {
+            else if(timer > -20) stopMario(mario, timeDiff);
+            if(key_down(UP) && mario->isOnGround && mario->timer > -2) {
                 mario->y -= 0.01;
                 mario->velY = -15;
                 mario->isOnGround = false;
             }
 
             gameTime -= timeDiff;
-            moveEntity(mario, timeDiff, map->map);
             entityTick(map, mario, timeDiff);
-            EntityNode *e1 = map->map->entityList;
-            EntityNode *e2 = e1->next;
-            while (e1 != NULL){
-                while (e2 != NULL){
-                    eECollision(e1, e2, map->map);
-                    e2 = e2->next;
-                }
-                e1 = e1->next;
-                if (e1 != NULL){
-                    e2 = e1->next;
-                }
-            }
             break;
         }
         case 1:

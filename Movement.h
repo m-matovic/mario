@@ -25,9 +25,9 @@ bool collisionX(EntityNode *entity, float timeDiff, Map *map);
 
 bool collisionY(EntityNode *entity, float timeDiff, Map *map);
 
-void moveEntity(EntityNode *entity, float timeDiff, Map *map);
+void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map);
 
-void eECollision(EntityNode *entity1, EntityNode *entity2, Map *map);
+void eECollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map);
 
 void stopMario(EntityNode *mario, float timeDiff);
 

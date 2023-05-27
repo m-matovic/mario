@@ -271,35 +271,52 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
             case FIREFLOWER:
                 return;
             default:
-                if(mario->velY > 0 && mario->y < notMario->y){
+                if((mario->velY > 0 && mario->y < notMario->y) || mario->y + mario->height <= notMario->y){
+
+                    int unkillableEntities[] = {FIRE_BAR, PLATFORM, HAMMER, FIREBALL, BOWSER};
+                    for(int i = 0; i < sizeof unkillableEntities/sizeof unkillableEntities[0]; i++) 
+                        if(notMario->type == unkillableEntities[i]){
+                            mario->timer = -20;
+                            mario->velX = 0;
+                            return;
+                        }
+
                     if(notMario->type == KOOPA_PARATROOPA) notMario->type = KOOPA_TROOPA;
                     else if(notMario->type == KOOPA_TROOPA){
                         notMario->type = KOOPA_SHELL;
                         notMario->height = 1;
+                        notMario->y += 0.5;
                         notMario->velX = 0;
                     }
                     else if(notMario->type == KOOPA_SHELL){
                         float marioMiddle = mario->x + mario->width / 2;
-                        if(marioMiddle < notMario->x + notMario->width / 2) notMario->velX = -ENTITY_SPEED;
-                        else if(marioMiddle > notMario->x + notMario->width / 2) notMario->velX = ENTITY_SPEED;
+                        if(marioMiddle < notMario->x + notMario->width / 2) notMario->velX = 2*ENTITY_SPEED;
+                        else if(marioMiddle > notMario->x + notMario->width / 2) notMario->velX = -2*ENTITY_SPEED;
                         else notMario->velX = 0;
                     }
                     else notMario->timer = -20;
-                    mario->velY = JUMP_VELOCITY/2;
+                    mario->velY = -JUMP_VELOCITY/2;
+                    mario->y -= 0.1;
+                    notMario->velY = 0;
                 }
-                else mario->timer = -20;
+                else {
+                    mario->timer = -20;
+                    mario->velX = 0;
+                }
                 return;
         }
     }
 
-    if((entity1->type == KOOPA_SHELL) != (entity2->type == KOOPA_SHELL)){
-        if(entity1->type == KOOPA_SHELL) entity2->timer = -20; 
-        else entity1->timer = -20;
-        return;
-    }
+    else {
+        if((entity1->type == KOOPA_SHELL) != (entity2->type == KOOPA_SHELL)){
+            if(entity1->type == KOOPA_SHELL) entity2->timer = -20; 
+            else entity1->timer = -20;
+            return;
+        }
 
-    entity1->velX = -entity1->velX;
-    entity2->velX = -entity2->velX;
+        entity1->velX = -entity1->velX;
+        entity2->velX = -entity2->velX;
+    }
 }
 
 void entityFall(EntityNode *entity, MapViewport *map){
@@ -398,6 +415,7 @@ void koopaParatroopaAI(EntityNode *entity){
         entity->velY = -JUMP_VELOCITY;
         entity->isOnGround = false;
     }
+    
 }
 
 void fireballAI(EntityNode *entity, float timeDelta){
@@ -430,6 +448,8 @@ void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewpor
 
     entity->timer -= timeDelta;
     if(entity->timer < 0 && entity->timer > -20) entity->timer = 0;
+
+    if(getMapBlock(map->map, entity->x, ceil(entity->y + entity->height + EPS)) != BOWSER_BRIDGE) entity->velX = -entity->velX;
 
     switch(state->state){
         case 0: //Ready to fire
@@ -496,32 +516,6 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
             continue;
         }
 
-        // itr->isOnGround = true;
-        // int pass_through[] = {AIR, COIN_BLOCK, 255, WATER, WATER_TOP};
-        // bool checker = true;
-        // int nextY = floor(itr->y + itr->height + itr->velY * timeDelta + itr->accY * timeDelta * timeDelta / 2);
-        // for(int i = 0; i < sizeof pass_through / sizeof pass_through[0]; i++) 
-        //     if(getMapBlock(map->map, floor(itr->x + 10 * EPS), nextY) == pass_through[i]) {
-        //         checker = false;
-        //         break;
-        //     }
-        // if(!checker) {
-        //     checker = true;
-        //     for(int i = 0; i < sizeof pass_through / sizeof pass_through[0]; i++) 
-        //         if(getMapBlock(map->map, floor(itr->x + itr->width - 10 * EPS), nextY) == pass_through[i]) {
-        //             checker = false;
-        //             break;
-        //         }
-        //     }
-        // itr->isOnGround = checker;
-
-        //if(itr->isOnGround && ceil(itr->y + itr->height) >= VIEWPORT_HEIGHT) itr->isOnGround = false;
-
-        //if(itr->isOnGround && itr->velY > 0 && itr->type != PIRANHA_PLANT) {
-            //itr->velY = 0;
-            //itr->accY = 0;
-        //}
-
         if(itr->type == KOOPA_PARATROOPA) koopaParatroopaAI(itr);
         if(itr->type == PIRANHA_PLANT) piranhaPlantAI(itr, mario, timeDelta); 
         else if(itr->type == HAMMER || itr->type == FIREBALL) projectileAI(itr, map, timeDelta);
@@ -543,11 +537,17 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         if(itr->x + EPS > map->map->length - 1) itr->velX = -abs(itr->velX);
 
         if(collisionX(itr, timeDelta, map->map)) entityToBlockCollision(itr, map, timeDelta);
-        if(itr->type != MARIO && itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map->map);
-        else if(itr->type == PIRANHA_PLANT) {
-            itr->x += itr->velX * timeDelta;
-            itr->y += itr->velY * timeDelta;
+        
+        EntityNode *itr2 = itr->next;
+        while(itr2 != nullptr){
+            EntityNode *prev = itr2;
+            itr2 = itr2->next;
+            if(itr->type != PLATFORM || prev->type != PLATFORM) eECollision(itr, prev, map);
         }
+
+        if(itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map);
+        else if(itr->type == PIRANHA_PLANT) itr->y += itr->velY * timeDelta;
+        
 
         EntityNode *temp = nullptr;
         if(itr->type == 255 || itr->timer <= -20) temp = itr;
@@ -564,9 +564,10 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta){
         itr->accY = GRAVITY_ACCELERATION;
         itr->y += itr->velY * timeDelta + itr->accY * timeDelta * timeDelta / 2;
         itr->velY += itr->accY * timeDelta;
+        itr->velX = 0;
         EntityNode *prev = itr;
         itr = itr->next;
-        if(prev->y + prev->height + EPS >= map->map->height) {
+        if(prev->y + prev->height + EPS > map->map->height) {
             if(prev->type != MARIO) removeEntity(prev, map);
             else prev->timer = -30;
         }
