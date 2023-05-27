@@ -329,16 +329,7 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                         mario->isOnGround = true;
                         return;
                     }
-                    else {
-                        if(mario->entity != nullptr) return;
-                        if(mario->timer == 0) mario->timer = -20;
-                        else {
-                            mario->timer = 0;
-                            mario->height--;
-                            mario->entity = malloc(sizeof(float));
-                            *(float*) mario->entity = INVINSIBLE_PERIOD;
-                        }
-                    }
+                    else notMario->timer = -20;
 
                     *score += 1000;
                     mario->velY = -JUMP_VELOCITY/2;

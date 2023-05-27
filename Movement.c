@@ -75,7 +75,7 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map){
                 float newY = entity->y + entity->velY * timeDiff;
                 int left = getMapBlock(map->map, (int) floorf(entity->x), (int) floorf(newY));
                 int right = getMapBlock(map->map, (int) floorf(entity->x + entity->width - 0.05), (int)floorf(newY));
-                if(entity->type == MARIO){
+                if(entity->type == MARIO && entity->timer >= 1){
                     switch (left) {
                         case BRICK:
                             setViewportBlock(map, (int) floorf(entity->x), (int) floorf(newY), AIR);
