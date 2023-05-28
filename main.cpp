@@ -183,10 +183,10 @@ START:
             case 0:
             {
                 if(key_down(LEFT) && mario->timer > -20)
-                    mario->accX = -100;
+                    mario->accX = -100.0f;
 
                 else if(key_down(RIGHT) && mario->timer > -20)
-                    mario->accX = 100;
+                    mario->accX = 100.0f;
 
                 else if(timer > -20)
                     stopMario(mario, timeDiff);
@@ -208,7 +208,6 @@ START:
                 }
                 else if(!key_down(F_KEY))
                     fired = false;
-                
 
                 gameTime -= timeDiff;
                 entityTick(map, mario, timeDiff, &score);
