@@ -184,7 +184,7 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score
                 }
 
             } else{
-                float newY = entity->y + entity->velY * timeDiff;
+                float newY = entity->y + entity->velY * timeDiff + entity->height;
                 int left = getMapBlock(map->map, (int) floorf(entity->x + 0.2), (int) floorf(newY));
                 int right = getMapBlock(map->map, (int) floorf(entity->x + entity->width - 0.2), (int)floorf(newY));
                 Block L = getBlock(left);
