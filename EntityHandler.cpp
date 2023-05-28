@@ -88,7 +88,7 @@ void entityToBlockCollision(EntityNode *entity, MapViewport *map, float timeDelt
         int top = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y));
         int middle = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
         int bottom = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
-        if(top == FLAG_POLE || middle == FLAG_POLE || bottom == FLAG_POLE) {
+        if(top == FLAG_POLE || top == FLAG_TOP || middle == FLAG_POLE || middle == FLAG_TOP || bottom == FLAG_POLE || bottom == FLAG_TOP) {
             entity->x = floor(newX) - entity->width / 2;
             entity->timer = 3;
         }
@@ -399,8 +399,6 @@ void entityFall(EntityNode *entity, MapViewport *map){
 }
 
 bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta) {
-    //if(floor(entity->x - entity->velX * timeDelta) == floor(entity->x)) return false;
-
     double direction = entity->velX > 0 ? entity->width + 0.05 : -0.05;
     bool result = true;
     int y = entity->y < 0 ? 0 : floor(entity->y);
