@@ -10,7 +10,7 @@
 #define SCREEN_MARGIN 10
 #define LEFT_OFFSET 2.5
 
-enum keys { UP = 10, DOWN, LEFT, RIGHT, F_KEY = 31 };
+enum keys { UP = 10, DOWN, LEFT, RIGHT, F_KEY = 31, ENTER = 4 };
 enum states { STANDING = 20, WALKING, JUMPING, POLE, LARGE_STANDING, LARGE_WALKING, LARGE_JUMPING, LARGE_POLE, FIRE_STANDING, FIRE_WALKING, FIRE_JUMPING, FIRE_POLE, DYING };
 
 int main(void)
@@ -137,7 +137,16 @@ START:
         status(score, coins, world, gameTime > 0 ? gameTime : 0, lives);
 
         if(cutscene == 8)
+        {
             end_message();
+
+            if(key_down(ENTER))
+            {
+                frame_draw();
+                freeMap(map);
+                goto START;
+            }
+        }
 
         frame_draw();
 

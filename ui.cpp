@@ -362,6 +362,10 @@ void end_message(void)
     nk_layout_row_dynamic(&glfw.ctx, 80, 2);
     nk_label(&glfw.ctx, "", NK_TEXT_CENTERED);
     nk_label(&glfw.ctx, "YOUR QUEST IS OVER", NK_TEXT_CENTERED);
+
+    nk_layout_row_dynamic(&glfw.ctx, 80, 2);
+    nk_label(&glfw.ctx, "", NK_TEXT_CENTERED);
+    nk_label(&glfw.ctx, "PRESS ENTER TO EXIT TO MENU", NK_TEXT_CENTERED);
 }
 
 void frame_draw(void)
