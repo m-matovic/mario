@@ -47,7 +47,6 @@ START:
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
     EntityNode *mario = summonEntity(MARIO, 2, y_per_world[world], map->map);
-    summonEntity(MUSHROOM_ENTITY, 2, 2, map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
@@ -311,6 +310,7 @@ START:
 
             mario = summonEntity(MARIO, 2, y_per_world[world], map->map);
             mario->timer = lastState > 0 ? lastState : 0;
+            mario->velX = 0;
             if(mario->timer > 0) {
                 mario->height++;
                 mario->y--;

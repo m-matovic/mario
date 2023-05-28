@@ -88,7 +88,7 @@ void entityToBlockCollision(EntityNode *entity, MapViewport *map, float timeDelt
         int top = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y));
         int middle = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
         int bottom = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
-        if(top == FLAG_POLE || middle == FLAG_POLE || bottom == FLAG_POLE) {
+        if(top == FLAG_POLE || top == FLAG_TOP || middle == FLAG_POLE || middle == FLAG_TOP || bottom == FLAG_POLE || bottom == FLAG_TOP) {
             entity->x = floor(newX) - entity->width / 2;
             entity->timer = 3;
         }
@@ -285,12 +285,14 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                 if(mario->height <= 1) mario->y--;
                 mario->height = 1.9;
                 notMario->type = 255;
+                *score += 1000;
                 return;
             case FIREFLOWER:
                 mario->timer = 2;
                 if(mario->height <= 1) mario->y--;
                 mario->height = 1.9;
                 notMario->type = 255;
+                *score += 2000;
                 return;
             default:
                 if((mario->velY > 0 && mario->y < notMario->y) || mario->y + mario->height <= notMario->y){
@@ -399,8 +401,6 @@ void entityFall(EntityNode *entity, MapViewport *map){
 }
 
 bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta) {
-    //if(floor(entity->x - entity->velX * timeDelta) == floor(entity->x)) return false;
-
     double direction = entity->velX > 0 ? entity->width + 0.05 : -0.05;
     bool result = true;
     int y = entity->y < 0 ? 0 : floor(entity->y);
@@ -445,14 +445,14 @@ void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
         case 0: // Piranha plant is hidden 
             if(entity->timer == 0 && entity->x - PIRANHA_RANGE < mario->x && mario->x < entity->x + entity->width + PIRANHA_RANGE) {
                 state->state = 2;
-                entity->timer = ((float)entity->height) / ENTITY_SPEED;
+                entity->timer = ((float)entity->height + 0.1) / ENTITY_SPEED;
                 entity->velY = -ENTITY_SPEED;
             }
             break;
         case 1: // Piranha is exposed
             if(entity->timer == 0) {
                 state->state = 3;
-                entity->timer = ((float)entity->height) / ENTITY_SPEED;
+                entity->timer = ((float)entity->height + 0.1) / ENTITY_SPEED;
                 entity->velY = ENTITY_SPEED;
             }
             break;
