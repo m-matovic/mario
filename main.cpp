@@ -47,6 +47,7 @@ START:
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
     EntityNode *mario = summonEntity(MARIO, 2, y_per_world[world], map->map);
+    summonEntity(MUSHROOM_ENTITY, 2, 2, map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
@@ -61,6 +62,7 @@ START:
     float startTime = currentTime;
     bool fired = false;
     int lastState = 0;
+    int lastScore = 0;
 
     while(!should_end())
     {
@@ -292,8 +294,12 @@ START:
             if(mario->timer <= -30) {
                 lives--;
                 lastState = 0;
+                score = lastScore;
             }
-            else if(world < 4) world++;
+            else if(world < 4) {
+                world++;
+                lastScore = score;
+            }
             else break;
 
             freeMap(map);
@@ -301,7 +307,10 @@ START:
 
             mario = summonEntity(MARIO, 2, y_per_world[world], map->map);
             mario->timer = lastState > 0 ? lastState : 0;
-            if(mario->timer > 0) mario->height++;
+            if(mario->timer > 0) {
+                mario->height++;
+                mario->y--;
+            }
             shifter = 0;
             gameTime = 122.0f;
             if(lives == 0) break;
