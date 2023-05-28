@@ -574,7 +574,7 @@ void platformAI(EntityNode *entity, MapViewport *map){
     }
 }
 
-void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score){
+void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score, int *coins){
     EntityNode *itr = map->map->entityList;
     int AIless[] = {MARIO, MUSHROOM_ENTITY, STAR_ENTITY, FIREFLOWER, KOOPA_SHELL};
 
@@ -634,10 +634,10 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score
         if(collisionX(itr, timeDelta, map->map)) entityToBlockCollision(itr, map, timeDelta);
         
 
-        if(itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map, score);
+        if(itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map, score, coins);
         else if(itr->type == PIRANHA_PLANT) itr->y += itr->velY * timeDelta;
 
-        if(itr->type == FIRE_BAR && itr->timer > 0) moveEntity(itr, timeDelta, map, score);
+        if(itr->type == FIRE_BAR && itr->timer > 0) moveEntity(itr, timeDelta, map, score, coins);
 
         EntityNode *itr2 = itr->next;
         while(itr2 != nullptr){

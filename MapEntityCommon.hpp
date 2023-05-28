@@ -205,6 +205,6 @@ void projectileAI(EntityNode *entity, MapViewport *map, float timeDelta);
 
 void platformAI(EntityNode *entity, MapViewport *map);
 
-void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score);
+void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score, int *coins);
 
 #endif

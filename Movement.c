@@ -45,7 +45,7 @@ bool collisionY(EntityNode *entity, float timeDiff, Map *map){
     return true;
 }
 
-void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score){
+void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score, int *coins){
     if (entity->velX != 0){
         if (!collisionX(entity, timeDiff, map->map)){
             entity->x += entity->velX * timeDiff;
@@ -60,14 +60,17 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score
                 if(T.type == COIN_BLOCK){
                     setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y), AIR);
                     *score += 200;
+                    *coins += 1;
                 }
                 if(M.type == COIN_BLOCK){
                     setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height), AIR);
                     *score += 200;
+                    *coins += 1;
                 }
                 if(B.type == COIN_BLOCK){
                     setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01), AIR);
                     *score += 200;
+                    *coins += 1;
                 }
             }
         } else{
@@ -85,14 +88,17 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score
                     if(T.type == COIN_BLOCK){
                         setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y), AIR);
                         *score += 200;
+                        *coins += 1;
                     }
                     if(M.type == COIN_BLOCK){
                         setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height), AIR);
                         *score += 200;
+                        *coins += 1;
                     }
                     if(B.type == COIN_BLOCK){
                         setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01), AIR);
                         *score += 200;
+                        *coins += 1;
                     }
                 }
                 if (entity->velX < 0){
@@ -139,6 +145,7 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score
                     } else if (L.content == COIN){
                         setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
                         score += 200;
+                        *coins += 1;
                     }
                     if(R.content == MUSHROOM){
                         if(entity->timer == 1 || entity->timer == 2){
@@ -159,6 +166,7 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score
                     } else if (R.content == COIN){
                         setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
                         *score += 200;
+                        *coins += 1;
                     }
                     if (L.type == BRICK && entity->timer >= 1 && L.content == EMPTY){
                         setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), AIR);
@@ -192,10 +200,12 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score
                 if(R.type == COIN_BLOCK){
                     setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.2), (int ) floorf(newY), AIR);
                     *score += 200;
+                    *coins += 1;
                 }
                 if(L.type == COIN_BLOCK){
                     setViewportBlock(map, (int ) floorf(entity->x + 0.2), (int ) floorf(newY), AIR);
                     *score += 200;
+                    *coins += 1;
                 }
                 entity->y += entity->velY * timeDiff;
             }
@@ -217,11 +227,13 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score
                 setViewportBlock(map, (int)floorf(entity->x + 0.2), (int) floorf(newFeet), AIR);
                 *score += 200;
                 shouldLand = 0;
+                *coins += 1;
             }
             if((R.type== COIN_BLOCK) && entity->type == MARIO){
                 setViewportBlock(map, (int) floorf(entity->x + entity->width - 0.2), (int) floorf(newFeet), AIR);
                 *score += 200;
                 shouldLand = 0;
+                *coins += 1;
             }
             if(shouldLand){
                 entity->isOnGround = true;

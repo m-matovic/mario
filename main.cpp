@@ -35,7 +35,7 @@ START:
         frame_draw();
     }
     
-    int world = 2;
+    int world = 1;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
@@ -223,7 +223,11 @@ START:
                     fired = false;
 
                 gameTime -= timeDiff;
-                entityTick(map, mario, timeDiff, &score);
+                if(coins >= 100){
+                    coins -= 100;
+                    lives += 1;
+                }
+                entityTick(map, mario, timeDiff, &score, &coins);
                 break;
             }
             case 1:
