@@ -13,6 +13,8 @@
 enum keys { UP = 10, DOWN, LEFT, RIGHT, F_KEY = 31, ENTER = 4 };
 enum states { STANDING = 20, WALKING, JUMPING, POLE, LARGE_STANDING, LARGE_WALKING, LARGE_JUMPING, LARGE_POLE, FIRE_STANDING, FIRE_WALKING, FIRE_JUMPING, FIRE_POLE, DYING };
 
+int y_per_world[] = { 0, 12, 12, 12, 6 };
+
 int main(void)
 {
     glfw_init("mario");
@@ -44,7 +46,7 @@ START:
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
-    EntityNode *mario = summonEntity(MARIO, 2, 5, map->map);
+    EntityNode *mario = summonEntity(MARIO, 2, y_per_world[world], map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
@@ -297,7 +299,7 @@ START:
             freeMap(map);
             map = mapInit("worlds/" + std::to_string(world));
 
-            mario = summonEntity(MARIO, 2, 5, map->map);
+            mario = summonEntity(MARIO, 2, y_per_world[world], map->map);
             mario->timer = lastState > 0 ? lastState : 0;
             if(mario->timer > 0) mario->height++;
             shifter = 0;
