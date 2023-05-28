@@ -98,7 +98,8 @@ START:
         }
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            if(itr->type != FIRE_BAR && itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type != FIRE_BAR && itr->type != MARIO)
+                draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         for(int y = 0; y < VIEWPORT_HEIGHT; y++)
         {
@@ -115,16 +116,23 @@ START:
         }
 
         for(EntityNode *itr = map->map->entityList; itr != NULL; itr = itr->next)
-            if(itr->type == FIRE_BAR) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type == FIRE_BAR)
+                draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
         for(EntityNode *itr = map->map->deadEntities; itr != NULL; itr = itr->next)
-            if(itr->type != MARIO) draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
+            if(itr->type != MARIO)
+                draw_entity(itr->type, itr->velX, (itr->x - LEFT_OFFSET - shifter - map->x) * 48, (itr->y - map->y) * 48);
 
-        if(cutscene == 1) draw_entity(POLE + mario->timer * 4, 1, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->timer <= -20) draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velY != 0) draw_entity(JUMPING + mario->timer * 4, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velX != 0) draw_entity(WALKING + mario->timer * 4, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else draw_entity(STANDING + mario->timer * 4, ceil(direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        if(cutscene == 1)
+            draw_entity(POLE + mario->timer * 4, 1, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->timer <= -20)
+            draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velY != 0)
+            draw_entity(JUMPING + mario->timer * 4, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(mario->velX != 0)
+            draw_entity(WALKING + mario->timer * 4, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else
+            draw_entity(STANDING + mario->timer * 4, ceil(direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
 
         status(score, coins, world, gameTime > 0 ? gameTime : 0, lives);
 
@@ -139,7 +147,8 @@ START:
         currentTime = newTime;
 
         if(mario->timer == 3){
-            if(world < 4) cutscene = 1;
+            if(world < 4)
+                cutscene = 1;
             else {
                 for(EntityNode *itr = map->map->entityList; itr != nullptr; itr = itr->next)
                     if(itr->type == BOWSER) {
@@ -151,7 +160,8 @@ START:
                 while(itr != nullptr){
                     EntityNode *prev = itr;
                     itr = itr->next;
-                    if(prev->type == HAMMER || prev->type == FIREBALL) removeAliveEntity(prev, map);
+                    if(prev->type == HAMMER || prev->type == FIREBALL)
+                        removeAliveEntity(prev, map);
                 }
 
                 desY = round(mario->y + mario->height + 1);
@@ -165,95 +175,106 @@ START:
             }
             mario->timer = lastState;
         }
-        else lastState = mario->timer;
+        else
+            lastState = mario->timer;
 
-        switch (cutscene)
+        switch(cutscene)
         {
-        case 0: {
+            case 0:
+            {
+                if(key_down(LEFT) && mario->timer > -20)
+                    mario->accX = -100;
 
-            if(key_down(LEFT) && mario->timer > -20){
-                mario->accX = -100;
-            }
-            else if(key_down(RIGHT) && mario->timer > -20){
-                mario->accX = 100;
-            }
-            else if(timer > -20) stopMario(mario, timeDiff);
+                else if(key_down(RIGHT) && mario->timer > -20)
+                    mario->accX = 100;
 
-            if(mario->velX > EPS) direction = EPS;
-            else if(mario->velX < -EPS) direction = -EPS;
+                else if(timer > -20)
+                    stopMario(mario, timeDiff);
 
-            if(key_down(UP) && mario->isOnGround && mario->timer > -2) {
-                mario->y -= 0.01;
-                mario->velY = -15;
-                mario->isOnGround = false;
-            }
-            if(key_down(F_KEY) && fired == false && mario->timer == 2) {
-                EntityNode *fire = summonEntity(FIRE, mario->x + (direction > 0 ? 0.5 : -0.5), mario->y -0.1, map->map);
-                fire->velX = (direction > 0 ? 1 : -1) * ENTITY_SPEED;
-                fired = true;
-            }
-            else if(!key_down(F_KEY)) fired = false;
-            
+                if(mario->velX > EPS)
+                    direction = EPS;
+                else if(mario->velX < -EPS)
+                    direction = -EPS;
 
-            gameTime -= timeDiff;
-            entityTick(map, mario, timeDiff, &score);
+                if(key_down(UP) && mario->isOnGround && mario->timer > -2) {
+                    mario->y -= 0.01;
+                    mario->velY = -15;
+                    mario->isOnGround = false;
+                }
+                if(key_down(F_KEY) && fired == false && mario->timer == 2) {
+                    EntityNode *fire = summonEntity(FIRE, mario->x + (direction > 0 ? 0.5 : -0.5), mario->y -0.1, map->map);
+                    fire->velX = (direction > 0 ? 1 : -1) * ENTITY_SPEED;
+                    fired = true;
+                }
+                else if(!key_down(F_KEY))
+                    fired = false;
+                
+
+                gameTime -= timeDiff;
+                entityTick(map, mario, timeDiff, &score);
+                break;
+            }
+            case 1:
+                mario->velY = 5;
+                mario->y += mario->velY * timeDiff;
+                score += 5000 * timeDiff;
+                if(getMapBlock(map->map, mario->x + mario->width, mario->y + mario->height - 1 + mario->velY * timeDiff) == BRICK_STAIR) {
+                    cutscene = 2; 
+                    mario->velY = 0;
+                    mario->velX = 0;
+                }
+                break;
+            case 2:
+                gameTime -= 1;
+                score += 125;
+                if(gameTime < 0) {
+                    cutscene = 3;
+                    gameTime = 0;
+                }
             break;
-        }
-        case 1:
-            mario->velY = 5;
-            mario->y += mario->velY * timeDiff;
-            score += 5000 * timeDiff;
-            if(getMapBlock(map->map, mario->x + mario->width, mario->y + mario->height - 1 + mario->velY * timeDiff) == BRICK_STAIR) {
-                cutscene = 2; 
+            case 3:
                 mario->velY = 0;
-                mario->velX = 0;
-            }
-            break;
-        case 2:
-            gameTime -= 1;
-            score += 125;
-            if(gameTime < 0) {
-                cutscene = 3;
-                gameTime = 0;
-            }
-        break;
-        case 3:
-            mario->velY = 0;
-            mario->velX = 5;
-            mario->x += mario->velX * timeDiff;
-            break;
-        case 4:
-            timer -= timeDiff;
-            if(timer < 0) {
-                setViewportBlock(map, desX, desY, AIR);
-                desX--;
-                timer = 0.25;
-            }
-            if(getMapBlock(map->map, desX, desY) == BRICK_GROUND) cutscene = 5;
-            break;
-        case 5:
-            bowser->velY = 10;
-            bowser->y += bowser->velY * timeDiff;
-            if(bowser->y >= map->map->height){
-                removeAliveEntity(bowser, map);
-                cutscene = 6;
-            }
-            break;
-        case 6:
-            if(mario->x < map->map->length - 10) mario->velX = 5;
-            else mario->velX = 0;
-            if(getMapBlock(map->map, mario->x, mario->y + mario->height + EPS) == AIR) mario->velY = 5;
-            else mario->velY = 0;
+                mario->velX = 5;
+                mario->x += mario->velX * timeDiff;
+                break;
+            case 4:
+                timer -= timeDiff;
+                if(timer < 0) {
+                    setViewportBlock(map, desX, desY, AIR);
+                    desX--;
+                    timer = 0.25;
+                }
+                if(getMapBlock(map->map, desX, desY) == BRICK_GROUND)
+                    cutscene = 5;
+                break;
+            case 5:
+                bowser->velY = 10;
+                bowser->y += bowser->velY * timeDiff;
+                if(bowser->y >= map->map->height){
+                    removeAliveEntity(bowser, map);
+                    cutscene = 6;
+                }
+                break;
+            case 6:
+                if(mario->x < map->map->length - 10)
+                    mario->velX = 5;
+                else mario->velX = 0;
+                if(getMapBlock(map->map, mario->x, mario->y + mario->height + EPS) == AIR)
+                    mario->velY = 5;
+                else mario->velY = 0;
 
-            mario->x += mario->velX * timeDiff;
-            mario->y += mario->velY * timeDiff;
-            if(mario->velX == 0 && mario->velY == 0) cutscene = 7;
-            break;
-        case 7:
-            if(shifter < 1) shifter += 0.025;
-            if(shifter >= 1 && shiftRight(map)) shifter -= 1;
-            else cutscene = 8;
-            break;
+                mario->x += mario->velX * timeDiff;
+                mario->y += mario->velY * timeDiff;
+                if(mario->velX == 0 && mario->velY == 0) cutscene = 7;
+                break;
+            case 7:
+                if(shifter < 1) 
+                    shifter += 0.025;
+                if(shifter >= 1 && shiftRight(map))
+                    shifter -= 1;
+                else
+                    cutscene = 8;
+                break;
         }
 
         if(mario->timer <= -30 || mario->x + mario->width > map->map->length - 5) {
@@ -270,10 +291,14 @@ START:
             gameTime = 122.0f;
             if(lives == 0) break;
         }
-        if(gameTime < 0) mario->timer = -20;
+        if(gameTime < 0)
+            mario->timer = -20;
 
-        if(mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1 - shifter > 0 && shifter < mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1) shifter = mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1;
-        if(mario->x - map->x - SCREEN_MARGIN - 1 - shifter < 0 && shifter > mario->x - map->x - SCREEN_MARGIN - 1) shifter = mario->x - map->x - SCREEN_MARGIN - 1;
+        if(mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1 - shifter > 0 && shifter < mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1)
+            shifter = mario->x - map->x - VIEWPORT_WIDTH + SCREEN_MARGIN + 1;
+
+        if(mario->x - map->x - SCREEN_MARGIN - 1 - shifter < 0 && shifter > mario->x - map->x - SCREEN_MARGIN - 1)
+            shifter = mario->x - map->x - SCREEN_MARGIN - 1;
 
         if(shifter > 1) {
             if(shiftRight(map)) shifter -= 1;
@@ -281,10 +306,14 @@ START:
         else if(shifter < -1) {
             if(shiftLeft(map)) shifter += 1;;
         }
-        if(shifter < -LEFT_OFFSET) shifter = -LEFT_OFFSET;
-        if(shifter > 1) shifter = 1;
+        if(shifter < -LEFT_OFFSET)
+            shifter = -LEFT_OFFSET;
 
-        if(mario->x < 0) mario->x = 0;
+        if(shifter > 1)
+            shifter = 1;
+
+        if(mario->x < 0)
+            mario->x = 0;
     }
 
     if(lives == 0)
