@@ -10,10 +10,6 @@
 #define SCREEN_MARGIN 10
 #define LEFT_OFFSET 2.5
 
-static int score = 0;
-static int coins = 0;
-static int lives = 3;
-
 enum keys { UP = 10, DOWN, LEFT, RIGHT, F_KEY = 31 };
 enum states { STANDING = 20, WALKING, JUMPING, POLE, LARGE_STANDING, LARGE_WALKING, LARGE_JUMPING, LARGE_POLE, FIRE_STANDING, FIRE_WALKING, FIRE_JUMPING, FIRE_POLE, DYING };
 
@@ -21,6 +17,13 @@ int main(void)
 {
     glfw_init("mario");
 
+START:
+
+    int score = 0;
+    int coins = 0;
+    int lives = 3;
+
+    background_color(97, 133, 248);
     int showmenu = 1;
     while(showmenu)
     {
@@ -282,6 +285,28 @@ int main(void)
         if(shifter > 1) shifter = 1;
 
         if(mario->x < 0) mario->x = 0;
+    }
+
+    if(lives == 0)
+    {
+        gameTime = 3.0f;
+
+        while(gameTime > 0.0f)
+        {
+            background_color(0, 0, 0);
+
+            frame_init();
+            game_over();
+            frame_draw();
+
+            gettimeofday(&current, NULL);
+            double newTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
+            double timeDiff = newTime - currentTime + (newTime < currentTime ? 10 : 0);
+            currentTime = newTime;
+            gameTime -= timeDiff;
+        }
+
+        goto START;
     }
 
     glfw_end();

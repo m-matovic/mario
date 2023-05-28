@@ -343,6 +343,14 @@ void show_splash(int world, int lives)
     free(text);
 }
 
+void game_over(void)
+{
+    nk_layout_row_dynamic(&glfw.ctx, 320, 1);
+
+    nk_layout_row_dynamic(&glfw.ctx, 80, 1);
+    nk_label(&glfw.ctx, "GAME OVER", NK_TEXT_CENTERED);
+}
+
 void end_message(void)
 {
     nk_layout_row_dynamic(&glfw.ctx, 200, 1);
