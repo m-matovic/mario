@@ -12,9 +12,9 @@
 
 bool isLanding(EntityNode *entity, float timeDiff, Map *map){
     float newFeet = entity->y + entity->height + entity->velY * timeDiff;
-    int left = getMapBlock(map, (int)floorf(entity->x), (int) floorf(newFeet));
-    int right = getMapBlock(map, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newFeet));
-    if ((left == AIR || left == 255) && (right == AIR || right == 255)){
+    int left = getMapBlock(map, (int)floorf(entity->x + 0.2), (int) floorf(newFeet));
+    int right = getMapBlock(map, (int) floorf(entity->x + entity->width - 0.2), (int) floorf(newFeet));
+    if ((left == AIR || left == 255 || left == COIN_BLOCK) && (right == AIR || right == 255 || right == COIN_BLOCK)){
         return false;
     }
     return true;
@@ -29,7 +29,7 @@ bool collisionX(EntityNode *entity, float timeDiff, Map *map){
     int top = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y));
     int middle = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
     int bottom = getMapBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
-    if ((top == AIR || top == 255) && (middle == AIR || middle == 255) && (bottom == AIR || bottom == 255)){
+    if ((top == AIR || top == 255 || top == COIN_BLOCK) && (middle == AIR || middle == 255 || middle == COIN_BLOCK) && (bottom == AIR || bottom == 255 || bottom == COIN_BLOCK)){
         return false;
     }
     return true;
@@ -45,24 +45,62 @@ bool collisionY(EntityNode *entity, float timeDiff, Map *map){
     return true;
 }
 
-void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map){
+void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score){
     if (entity->velX != 0){
         if (!collisionX(entity, timeDiff, map->map)){
             entity->x += entity->velX * timeDiff;
+            float newX = entity->x + entity->velX * timeDiff + ((entity->velX > 0) ? entity->width : 0);
+            int top = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y));
+            int middle = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
+            int bottom = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
+            Block T = getBlock(top);
+            Block M = getBlock(middle);
+            Block B = getBlock(bottom);
+            if(entity->type == MARIO){
+                if(T.type == COIN_BLOCK){
+                    setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y), AIR);
+                    *score += 200;
+                }
+                if(M.type == COIN_BLOCK){
+                    setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height), AIR);
+                    *score += 200;
+                }
+                if(B.type == COIN_BLOCK){
+                    setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01), AIR);
+                    *score += 200;
+                }
+            }
         } else{
             float newX = entity->x + entity->velX * timeDiff + ((entity->velX > 0) ? entity->width : 0);
             int top = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y));
             int middle = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height));
             int bottom = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
+            Block T = getBlock(top);
+            Block M = getBlock(middle);
+            Block B = getBlock(bottom);
             if((top == FLAG_POLE || middle == FLAG_POLE || bottom == FLAG_POLE) && entity->type == MARIO){
                 entity->timer = 3;
             } else{
+                if (entity->type == MARIO){
+                    if(T.type == COIN_BLOCK){
+                        setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y), AIR);
+                        *score += 200;
+                    }
+                    if(M.type == COIN_BLOCK){
+                        setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y + 0.5*entity->height), AIR);
+                        *score += 200;
+                    }
+                    if(B.type == COIN_BLOCK){
+                        setViewportBlock(map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01), AIR);
+                        *score += 200;
+                    }
+                }
                 if (entity->velX < 0){
                     entity->x = ceilf(entity->x + entity->velX*timeDiff);
                     entity->velX = 0;
                     entity->accX = 0;
                 } else{
-                    entity->x = floorf(entity->x + entity->velX * timeDiff + entity->width) - entity->width;
+                    entity->x = floorf(entity->x + entity->velX * timeDiff);
                     entity->velX = 0;
                     entity->accX = 0;
                 }
@@ -75,25 +113,121 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map){
                 float newY = entity->y + entity->velY * timeDiff;
                 int left = getMapBlock(map->map, (int) floorf(entity->x), (int) floorf(newY));
                 int right = getMapBlock(map->map, (int) floorf(entity->x + entity->width - 0.05), (int)floorf(newY));
-                if(entity->type == MARIO && entity->timer >= 1){
-                    switch (left) {
-                        case BRICK:
-                            setViewportBlock(map, (int) floorf(entity->x), (int) floorf(newY), AIR);
-                            break;
+                Block L = getBlock(left);
+                Block R = getBlock(right);
+                int shouldStop = 1;
+                if (entity->type == MARIO){
+                    if(L.content == MUSHROOM){
+                        if(entity->timer == 1 || entity->timer == 2){
+                            summonEntity(FIREFLOWER, (int ) floorf(entity->x), (int ) floorf(newY - 1), map->map);
+                        } else{
+                            summonEntity(MUSHROOM_ENTITY, (int ) floorf(entity->x), (int ) floorf(newY - 1), map->map);
+                        }
+
+                        setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
+                        score += 50;
                     }
-                    switch (right) {
-                        case BRICK:
-                            setViewportBlock(map, (int) floorf(entity->x + entity->width - 0.05), (int) floorf(newY), AIR);                        break;
+                    else if(L.content == ONE_UP){
+                        summonEntity(ONE_UP_ENTITY, (int ) floorf(entity->x), (int ) floorf(newY - 1), map->map);
+                        setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
+                        score += 50;
+                    }
+                    else if(L.content == STAR){
+                        summonEntity(STAR_ENTITY, (int ) floorf(entity->x), (int ) floorf(newY - 1), map->map);
+                        setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
+                        score += 50;
+                    } else if (L.content == COIN){
+                        setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
+                        score += 200;
+                    }
+                    if(R.content == MUSHROOM){
+                        if(entity->timer == 1 || entity->timer == 2){
+                            summonEntity(FIREFLOWER, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY - 1), map->map);
+                        } else{
+                            summonEntity(MUSHROOM_ENTITY, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY - 1), map->map);
+                        }
+                        setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
+                        *score += 50;
+                    } else if (R.content == ONE_UP){
+                        summonEntity(ONE_UP_ENTITY, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY - 1), map->map);
+                        setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
+                        *score += 50;
+                    } else if (R.content == STAR){
+                        summonEntity(STAR_ENTITY, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY - 1), map->map);
+                        setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
+                        *score += 50;
+                    } else if (R.content == COIN){
+                        setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
+                        *score += 200;
+                    }
+                    if (L.type == BRICK && entity->timer >= 1 && L.content == EMPTY){
+                        setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), AIR);
+                        *score += 50;
+                    }
+                    if (R.type == BRICK && entity->timer >= 1 && R.content == EMPTY){
+                        setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), AIR);
+                        *score += 50;
+                    }
+                    if(R.type == COIN_BLOCK){
+                        setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), AIR);
+                        *score += 200;
+                        shouldStop = 0;
+                    }
+                    if(L.type == COIN_BLOCK){
+                        setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), AIR);
+                        *score += 200;
+                        shouldStop = 0;
                     }
                 }
-                entity->velY = 0;
+                if (shouldStop){
+                    entity->velY = 0;
+                }
+
             } else{
+                float newY = entity->y + entity->velY * timeDiff;
+                int left = getMapBlock(map->map, (int) floorf(entity->x + 0.2), (int) floorf(newY));
+                int right = getMapBlock(map->map, (int) floorf(entity->x + entity->width - 0.2), (int)floorf(newY));
+                Block L = getBlock(left);
+                Block R = getBlock(right);
+                if(R.type == COIN_BLOCK){
+                    setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.2), (int ) floorf(newY), AIR);
+                    *score += 200;
+                }
+                if(L.type == COIN_BLOCK){
+                    setViewportBlock(map, (int ) floorf(entity->x + 0.2), (int ) floorf(newY), AIR);
+                    *score += 200;
+                }
                 entity->y += entity->velY * timeDiff;
             }
             entity->velY += entity->accY * timeDiff;
         } else{
-            entity->isOnGround = true;
-            entity->velY = 0;
+            float newFeet = entity->y + entity->height + entity->velY * timeDiff;
+            int left = getMapBlock(map->map, (int)floorf(entity->x + 0.2), (int) floorf(newFeet));
+            int right = getMapBlock(map->map, (int) floorf(entity->x + entity->width - 0.2), (int) floorf(newFeet));
+            Block L = getBlock(left);
+            Block R = getBlock(right);
+            int shouldLand = 1;
+            if((L.type == WATER_TOP || R.type == WATER_TOP) && entity->type == MARIO){
+                entity->timer = -20;
+            }
+            if((L.type == FLAG_TOP || R.type == FLAG_TOP) && entity->type == MARIO){
+                entity->timer = 3;
+            }
+            if((L.type == COIN_BLOCK) && entity->type == MARIO){
+                setViewportBlock(map, (int)floorf(entity->x + 0.2), (int) floorf(newFeet), AIR);
+                *score += 200;
+                shouldLand = 0;
+            }
+            if((R.type== COIN_BLOCK) && entity->type == MARIO){
+                setViewportBlock(map, (int) floorf(entity->x + entity->width - 0.2), (int) floorf(newFeet), AIR);
+                *score += 200;
+                shouldLand = 0;
+            }
+            if(shouldLand){
+                entity->isOnGround = true;
+                entity->velY = 0;
+                entity->y = floorf(newFeet) - entity->height;
+            }
         }
     }                                   //Kretanje kao i provera da li smo sleteli
 

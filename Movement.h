@@ -25,7 +25,7 @@ bool collisionX(EntityNode *entity, float timeDiff, Map *map);
 
 bool collisionY(EntityNode *entity, float timeDiff, Map *map);
 
-void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map);
+void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score);
 
 void eECollision(EntityNode *entity1, EntityNode *entity2, MapViewport *map, int *score);
 

@@ -35,7 +35,7 @@ START:
         frame_draw();
     }
     
-    int world = 1;
+    int world = 2;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();

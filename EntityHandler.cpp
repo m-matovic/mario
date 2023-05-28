@@ -634,10 +634,10 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score
         if(collisionX(itr, timeDelta, map->map)) entityToBlockCollision(itr, map, timeDelta);
         
 
-        if(itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map);
+        if(itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map, score);
         else if(itr->type == PIRANHA_PLANT) itr->y += itr->velY * timeDelta;
 
-        if(itr->type == FIRE_BAR && itr->timer > 0) moveEntity(itr, timeDelta, map);
+        if(itr->type == FIRE_BAR && itr->timer > 0) moveEntity(itr, timeDelta, map, score);
 
         EntityNode *itr2 = itr->next;
         while(itr2 != nullptr){
