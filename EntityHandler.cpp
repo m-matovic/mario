@@ -90,6 +90,7 @@ void entityToBlockCollision(EntityNode *entity, MapViewport *map, float timeDelt
         int bottom = getMapBlock(map->map, (int) floorf(newX), (int) floorf(entity->y + entity->height - 0.01));
         if(top == FLAG_POLE || top == FLAG_TOP || middle == FLAG_POLE || middle == FLAG_TOP || bottom == FLAG_POLE || bottom == FLAG_TOP) {
             entity->x = floor(newX) - entity->width / 2;
+            entity->velX = 0;
             entity->timer = 3;
         }
         else if(top == AXE || middle == AXE || bottom == AXE){
@@ -250,7 +251,7 @@ void clearEntityList(MapViewport *map){
 void killEntity(EntityNode *entity, MapViewport *map){
     int unkillableEntities[] = {PLATFORM, HAMMER, FIREBALL, BOWSER};
     for(int i = 0; i < sizeof unkillableEntities / sizeof unkillableEntities[0]; i++) if(entity->type == unkillableEntities[i]) {
-        entity->timer = 3;
+        //entity->timer = 3;
         return;
     }
 
@@ -356,6 +357,7 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
         }
     }
     else {
+        if(entity1->type == PLATFORM || entity2->type == PLATFORM) return;
         if((entity1->type == KOOPA_SHELL) != (entity2->type == KOOPA_SHELL)){
             if(entity1->type == KOOPA_SHELL) entity2->timer = -20; 
             else entity1->timer = -20;

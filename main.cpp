@@ -46,7 +46,7 @@ START:
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
-    EntityNode *mario = summonEntity(MARIO, 2, y_per_world[world], map->map);
+    EntityNode *mario = summonEntity(MARIO, 160, y_per_world[world], map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
@@ -233,7 +233,8 @@ START:
                 mario->velY = 5;
                 mario->y += mario->velY * timeDiff;
                 score += 5000 * timeDiff;
-                if(getMapBlock(map->map, mario->x + mario->width, mario->y + mario->height - 1 + mario->velY * timeDiff) == BRICK_STAIR) {
+                if(getMapBlock(map->map, mario->x + mario->width, mario->y + mario->height - 1 + mario->velY * timeDiff) == BRICK_STAIR ||
+                   getMapBlock(map->map, mario->x + mario->width, mario->y + mario->height + mario->velY * timeDiff) == BRICK_GROUND) {
                     cutscene = 2; 
                     mario->velY = 0;
                     mario->velX = 0;
