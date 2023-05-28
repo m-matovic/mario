@@ -36,8 +36,7 @@ START:
     }
     
     int world = 1;
-    //MapViewport *map = mapInit("worlds/" + std::to_string(world));
-    MapViewport *map = mapInit("demoMap");
+    MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
     load_blocks();

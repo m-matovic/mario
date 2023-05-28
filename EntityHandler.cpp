@@ -285,12 +285,14 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                 if(mario->height <= 1) mario->y--;
                 mario->height = 1.9;
                 notMario->type = 255;
+                *score += 1000;
                 return;
             case FIREFLOWER:
                 mario->timer = 2;
                 if(mario->height <= 1) mario->y--;
                 mario->height = 1.9;
                 notMario->type = 255;
+                *score += 2000;
                 return;
             default:
                 if((mario->velY > 0 && mario->y < notMario->y) || mario->y + mario->height <= notMario->y){
@@ -443,14 +445,14 @@ void piranhaPlantAI(EntityNode *entity, EntityNode *mario, float timeDelta){
         case 0: // Piranha plant is hidden 
             if(entity->timer == 0 && entity->x - PIRANHA_RANGE < mario->x && mario->x < entity->x + entity->width + PIRANHA_RANGE) {
                 state->state = 2;
-                entity->timer = ((float)entity->height) / ENTITY_SPEED;
+                entity->timer = ((float)entity->height + 0.1) / ENTITY_SPEED;
                 entity->velY = -ENTITY_SPEED;
             }
             break;
         case 1: // Piranha is exposed
             if(entity->timer == 0) {
                 state->state = 3;
-                entity->timer = ((float)entity->height) / ENTITY_SPEED;
+                entity->timer = ((float)entity->height + 0.1) / ENTITY_SPEED;
                 entity->velY = ENTITY_SPEED;
             }
             break;
@@ -632,10 +634,10 @@ void entityTick(MapViewport *map, EntityNode *mario, float timeDelta, int *score
         if(collisionX(itr, timeDelta, map->map)) entityToBlockCollision(itr, map, timeDelta);
         
 
-        if(itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map);
+        if(itr->type != FIRE_BAR && itr->type != PIRANHA_PLANT) moveEntity(itr, timeDelta, map, score);
         else if(itr->type == PIRANHA_PLANT) itr->y += itr->velY * timeDelta;
 
-        if(itr->type == FIRE_BAR && itr->timer > 0) moveEntity(itr, timeDelta, map);
+        if(itr->type == FIRE_BAR && itr->timer > 0) moveEntity(itr, timeDelta, map, score);
 
         EntityNode *itr2 = itr->next;
         while(itr2 != nullptr){
