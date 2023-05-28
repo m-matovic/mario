@@ -125,6 +125,8 @@ EntityNode* summonEntity(int type, float x, float y, Map *map){
         for(int i = 0; i < FIRE_BAR_LENGTH; i++){
             EntityNode *entity = static_cast<EntityNode*>(malloc(sizeof(EntityNode)));
             entity->next = map->entityList;
+            entity->prev = nullptr;
+            if(map->entityList != nullptr) map->entityList->prev = entity;
             map->entityList = entity;
 
             entity->type = type;
@@ -294,7 +296,7 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                 if((mario->velY > 0 && mario->y < notMario->y) || mario->y + mario->height <= notMario->y){
                     if(notMario->type == 255 || (notMario->type == FIRE_BAR && notMario->timer > 0)) return;
 
-                    int unkillableEntities[] = {FIRE_BAR, HAMMER, FIREBALL, BOWSER};
+                    int unkillableEntities[] = {FIRE_BAR, HAMMER, FIREBALL, BOWSER, PIRANHA_PLANT};
                     for(int i = 0; i < sizeof unkillableEntities/sizeof unkillableEntities[0]; i++) 
                         if(notMario->type == unkillableEntities[i]){
                             if(mario->entity != nullptr) return;
@@ -376,6 +378,8 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
 
         entity1->velX = -entity1->velX;
         entity2->velX = -entity2->velX;
+        if(entity1->timer >= 0) entity1->timer = 1.0f / abs(entity1->velX);
+        if(entity2->timer >= 0) entity2->timer = 1.0f / abs(entity2->velX);
     }
 }
 

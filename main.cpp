@@ -30,7 +30,7 @@ int main(void)
         frame_draw();
     }
     
-    int world = 1;
+    int world = 2;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
@@ -77,7 +77,8 @@ int main(void)
             continue;
         }
 
-        background_color(97, 133, 248);
+        if(world % 2 == 1) background_color(97, 133, 248);
+        else background_color(0, 0, 0);
 
         frame_init();
 
@@ -119,8 +120,8 @@ int main(void)
 
         if(cutscene == 1) draw_entity(POLE + mario->timer * 4, 1, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
         else if(mario->timer <= -20) draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velY != 0) draw_entity(JUMPING + mario->timer * 4, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velX != 0) draw_entity(WALKING + mario->timer * 4, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(abs(mario->velY) > EPS) draw_entity(JUMPING + mario->timer * 4, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
+        else if(abs(mario->velX) > EPS) draw_entity(WALKING + mario->timer * 4, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
         else draw_entity(STANDING + mario->timer * 4, ceil(direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
 
         status(score, coins, world, gameTime > 0 ? gameTime : 0, lives);
@@ -181,7 +182,7 @@ int main(void)
 
             if(key_down(UP) && mario->isOnGround && mario->timer > -2) {
                 mario->y -= 0.01;
-                mario->velY = -15;
+                mario->velY = -13;
                 mario->isOnGround = false;
             }
             if(key_down(F_KEY) && fired == false && mario->timer == 2) {
@@ -255,7 +256,10 @@ int main(void)
 
         if(mario->timer <= -30 || mario->x + mario->width > map->map->length - 5) {
             cutscene = 0;
-            if(mario->timer <= -30) lives--;
+            if(mario->timer <= -30) {
+                lives--;
+                lastState = 0;
+            }
             else if(world < 4) world++;
             else break;
 
@@ -263,6 +267,8 @@ int main(void)
             map = mapInit("worlds/" + std::to_string(world));
 
             mario = summonEntity(MARIO, 2, 5, map->map);
+            mario->timer = lastState > 0 ? lastState : 0;
+            if(mario->timer > 0) mario->height++;
             shifter = 0;
             gameTime = 122.0f;
             if(lives == 0) break;
