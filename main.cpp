@@ -35,7 +35,7 @@ START:
         frame_draw();
     }
     
-    int world = 1;
+    int world = 2;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
@@ -46,7 +46,7 @@ START:
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
-    EntityNode *mario = summonEntity(MARIO, 160, y_per_world[world], map->map);
+    EntityNode *mario = summonEntity(MARIO, 120, y_per_world[world], map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
@@ -130,7 +130,7 @@ START:
             draw_entity(POLE + mario->timer * 4, 1, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
         else if(mario->timer <= -20)
             draw_entity(DYING, mario->velX, (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
-        else if(mario->velY != 0)
+        else if(abs(mario->velY) > EPS)
             draw_entity(JUMPING + mario->timer * 4, ceil(mario->velX + direction), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);
         else if(mario->velX != 0)
             draw_entity(WALKING + mario->timer * 4, ceil(mario->velX), (mario->x - LEFT_OFFSET - shifter - map->x) * 48, (mario->y - map->y) * 48);

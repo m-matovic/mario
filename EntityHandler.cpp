@@ -251,7 +251,7 @@ void clearEntityList(MapViewport *map){
 void killEntity(EntityNode *entity, MapViewport *map){
     int unkillableEntities[] = {PLATFORM, HAMMER, FIREBALL, BOWSER};
     for(int i = 0; i < sizeof unkillableEntities / sizeof unkillableEntities[0]; i++) if(entity->type == unkillableEntities[i]) {
-        //entity->timer = 3;
+        entity->timer = 3;
         return;
     }
 
@@ -329,6 +329,7 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                     }
                     else if(notMario->type == PLATFORM){
                         mario->y = notMario->y - mario->height - EPS;
+                        if(notMario->velY > 0) mario->y += 0.1;
                         mario->velY = 0;
                         mario->accY = 0;
                         mario->isOnGround = true;
@@ -380,6 +381,7 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
             return;
         }
 
+        if(entity1->type == BOWSER || entity2->type == BOWSER) return;
         entity1->velX = -entity1->velX;
         entity2->velX = -entity2->velX;
         if(entity1->timer >= 0) entity1->timer = 1.0f / abs(entity1->velX);
@@ -417,6 +419,7 @@ bool isOnLedge(EntityNode *entity, MapViewport *map, float timeDelta) {
 }
 
 void smartAI(EntityNode *entity, EntityNode *mario, MapViewport *map, float timeDelta){
+    if(entity->type == BOWSER) return;
     entity->timer -= timeDelta;
     if(entity->timer < 0 && entity->timer > -20) entity->timer = 0;
 
@@ -508,6 +511,7 @@ void firebarAI(EntityNode *entity, float timeDelta){
 
 void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewport *map){
     State *state = static_cast<State*>(entity->entity);
+
     if(mario->x < entity->x + entity->width/2) state->direction = false;
     else state->direction = true;
 
@@ -519,7 +523,11 @@ void bowserAI(EntityNode *entity, EntityNode *mario, float timeDelta, MapViewpor
     entity->timer -= timeDelta;
     if(entity->timer < 0 && entity->timer > -20) entity->timer = 0;
 
-    if(getMapBlock(map->map, entity->x, ceil(entity->y + entity->height + EPS)) != BOWSER_BRIDGE) entity->velX = -entity->velX;
+    double chance = (double)rand() / RAND_MAX * 100;
+    if(chance > 99.5) entity->velX = -entity->velX;
+    
+
+    if(getMapBlock(map->map, entity->x, ceil(entity->y + entity->height - EPS)) != BOWSER_BRIDGE) entity->velX = -entity->velX;
 
     switch(state->state){
         case 0: //Ready to fire
