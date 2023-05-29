@@ -20,4 +20,4 @@ Isto kao za Linux, ali potrebno je podesiti $LIBS u Makefile-u, sto se ostavalja
 
 # Windows
 
-Verovatno moguce u MinGW okruzenju, ali podrebno je osigurati da su instalirane i dostupne biblioteke, sto se ostavlja korisniku.
+Verovatno moguce u MinGW okruzenju, ali potrebno je osigurati da su instalirane i dostupne biblioteke, sto se ostavlja korisniku.
