@@ -35,7 +35,7 @@ START:
         frame_draw();
     }
     
-    int world = 2;
+    int world = 1;
     MapViewport *map = mapInit("worlds/" + std::to_string(world));
 
     load_backgrounds();
@@ -46,7 +46,7 @@ START:
     gettimeofday(&current, NULL);
     double currentTime = current.tv_sec %10 + (double) current.tv_usec / 1000000;
 
-    EntityNode *mario = summonEntity(MARIO, 120, y_per_world[world], map->map);
+    EntityNode *mario = summonEntity(MARIO, 2, y_per_world[world], map->map);
     mario->velX = 0;
     double shifter = 0;
     float direction = -EPS;
