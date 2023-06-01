@@ -123,7 +123,7 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score
                         if(entity->timer == 1 || entity->timer == 2){
                             summonEntity(FIREFLOWER, (int ) floorf(entity->x), (int ) floorf(newY - 1), map->map);
                         } else{
-                            summonEntity(MUSHROOM_ENTITY, (int ) floorf(entity->x), (int ) floorf(newY - 1), map->map);
+                            summonEntity(MUSHROOM_ENTITY, (int ) floorf(entity->x), floorf(newY - 1) - 0.1, map->map);
                         }
 
                         setViewportBlock(map, (int ) floorf(entity->x), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
@@ -147,7 +147,7 @@ void moveEntity(EntityNode *entity, float timeDiff, MapViewport *map, int *score
                         if(entity->timer == 1 || entity->timer == 2){
                             summonEntity(FIREFLOWER, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY - 1), map->map);
                         } else{
-                            summonEntity(MUSHROOM_ENTITY, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY - 1), map->map);
+                            summonEntity(MUSHROOM_ENTITY, (int ) floorf(entity->x + entity->width - 0.05), floorf(newY - 1) - 0.1, map->map);
                         }
                         setViewportBlock(map, (int ) floorf(entity->x + entity->width - 0.05), (int ) floorf(newY), QUESTION_BLOCK_EMPTY);
                         *score += 50;

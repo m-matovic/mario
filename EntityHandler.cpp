@@ -344,7 +344,12 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
                 }
                 else {
                     if(mario->entity != nullptr) return;
-                    if(notMario->type == 255 || (notMario->type == FIRE_BAR && notMario->timer > 0) || notMario->type == PLATFORM) return;
+                    else if(notMario->type == 255 || (notMario->type == FIRE_BAR && notMario->timer > 0) || notMario->type == PLATFORM) return;
+                    if(notMario->type == KOOPA_SHELL && notMario->velX == 0){
+                        notMario->velX = (mario->velX > 0 ? 1 : -1) * ENTITY_SPEED;
+                        notMario->x += (notMario->velX > 0 ? 1 : -1) * .25;
+                        return;
+                    }
                     if(mario->timer == 0) mario->timer = -20;
                     else {
                         mario->timer = 0;
@@ -360,8 +365,33 @@ void entityToEntityCollision(EntityNode *entity1, EntityNode *entity2, MapViewpo
     else {
         if(entity1->type == PLATFORM || entity2->type == PLATFORM) return;
         if((entity1->type == KOOPA_SHELL) != (entity2->type == KOOPA_SHELL)){
-            if(entity1->type == KOOPA_SHELL) entity2->timer = -20; 
-            else entity1->timer = -20;
+            if(entity1->type == KOOPA_SHELL && entity1->velX != 0) entity2->timer = -20;
+            else if(entity1->type == KOOPA_SHELL) {
+                entity1->velX = entity2->velX;
+                entity1->x += (entity1->velX > 0 ? 1 : -1) * .25;
+                entity2->velX = -entity2->velX;
+            } 
+            else if(entity2->type == KOOPA_SHELL && entity2->velX != 0) entity1->timer = -20;
+            else {
+                entity2->velX = entity1->velX;
+                entity2->x += (entity2->velX > 0 ? 1 : -1) * .25;
+                entity1->velX = -entity1->velX;
+            }
+            return;
+        }
+        if(entity1->type == KOOPA_SHELL && entity2->type == KOOPA_SHELL){
+            if(entity1->velX == 0 && entity2->velX != 0) {
+                entity1->velX = entity2->velX;
+                entity2->velX = 0;
+            }
+            else if(entity2->velX == 0 && entity1->velX != 0){
+                entity2->velX = entity1->velX;
+                entity1->velX = 0;
+            }
+            else if(entity1->velX != 0 && entity2->velX != 0){
+                entity1->velX = -entity1->velX;
+                entity2->velX = -entity2->velX;
+            }
             return;
         }
         if((entity1->type == FIRE_BAR) != (entity2->type == FIRE_BAR)){
